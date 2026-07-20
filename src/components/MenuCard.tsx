@@ -7,8 +7,15 @@ import { Precio } from "./Precio";
  * Tarjeta de producto del panel "hueso".
  * Agotado = tarjeta atenuada y botón deshabilitado (§3).
  */
-export function MenuCard({ item }: { item: MenuItem }) {
+export function MenuCard({
+  item,
+  puedePedir,
+}: {
+  item: MenuItem;
+  puedePedir: boolean;
+}) {
   const agotado = !item.disponible;
+  const deshabilitado = agotado || !puedePedir;
 
   return (
     <article
@@ -64,11 +71,11 @@ export function MenuCard({ item }: { item: MenuItem }) {
             (Sola / White Meal) + extras, y agrega al carrito. */}
         <button
           type="button"
-          disabled={agotado}
+          disabled={deshabilitado}
           className={[
             "rounded-full px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white",
             "transition-transform duration-75 active:scale-94",
-            agotado
+            deshabilitado
               ? "cursor-not-allowed bg-[#b7ad99]"
               : "bg-casta hover:bg-casta-deep",
           ].join(" ")}

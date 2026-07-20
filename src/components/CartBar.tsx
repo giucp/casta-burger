@@ -7,7 +7,7 @@ import type { EstadoNegocio } from "@/lib/horario";
  * carrito, el selector de proteína/extras y el flujo a "Ver pedido".
  */
 export function CartBar({ estado }: { estado: EstadoNegocio }) {
-  if (!estado.abierto) {
+  if (!estado.puedePedir) {
     return (
       <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3.5 border-t border-white/8 bg-char px-5 py-3.5 shadow-[0_-8px_30px_rgba(0,0,0,.4)]">
         <span className="font-mono text-[13px] font-bold text-smoke">

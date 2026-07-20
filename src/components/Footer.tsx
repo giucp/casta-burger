@@ -1,4 +1,5 @@
 import { BUSINESS } from "@/lib/config";
+import { InstagramIcon, WhatsAppIcon } from "./icons";
 
 function Block({
   titulo,
@@ -12,10 +13,45 @@ function Block({
       <h3 className="mb-2.5 font-mono text-[11px] uppercase tracking-[0.16em] text-smoke">
         {titulo}
       </h3>
-      <div className="space-y-1 text-sm text-ash [&_a]:block [&_a]:transition-colors hover:[&_a]:text-casta">
-        {children}
-      </div>
+      <div className="space-y-1.5 text-sm text-ash">{children}</div>
     </div>
+  );
+}
+
+/** Enlace de red con su logo. El nombre de la red va como texto, no el handle. */
+function RedSocial({
+  href,
+  icono,
+  children,
+}: {
+  href?: string;
+  icono: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const contenido = (
+    <>
+      <span className="text-smoke transition-colors group-hover:text-casta">
+        {icono}
+      </span>
+      {children}
+    </>
+  );
+
+  if (!href) {
+    return (
+      <span className="flex items-center gap-2 text-smoke">{contenido}</span>
+    );
+  }
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="group flex items-center gap-2 transition-colors hover:text-casta"
+    >
+      {contenido}
+    </a>
   );
 }
 
@@ -34,24 +70,22 @@ export function Footer() {
         </Block>
 
         <Block titulo="Escríbenos">
-          {BUSINESS.whatsapp ? (
-            <a
-              href={`https://wa.me/${BUSINESS.whatsapp}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              WhatsApp
-            </a>
-          ) : (
-            <span className="block text-smoke">WhatsApp</span>
-          )}
-          <a
-            href={`https://instagram.com/${BUSINESS.instagram}`}
-            target="_blank"
-            rel="noreferrer"
+          <RedSocial
+            href={
+              BUSINESS.whatsapp
+                ? `https://wa.me/${BUSINESS.whatsapp}`
+                : undefined
+            }
+            icono={<WhatsAppIcon className="size-4.5" />}
           >
-            @{BUSINESS.instagram}
-          </a>
+            WhatsApp
+          </RedSocial>
+          <RedSocial
+            href={`https://instagram.com/${BUSINESS.instagram}`}
+            icono={<InstagramIcon className="size-4.5" />}
+          >
+            Instagram
+          </RedSocial>
         </Block>
       </div>
     </footer>

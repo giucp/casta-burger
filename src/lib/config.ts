@@ -14,6 +14,18 @@ export const BUSINESS = {
 } as const;
 
 /**
+ * Modo demo: la web se ve y se usa completa aunque el local esté cerrado.
+ *
+ * El §5 del brief pide deshabilitar los botones "Agregar" fuera de horario, y
+ * es lo correcto en producción. Pero mientras se muestra el diseño hace falta
+ * poder recorrer el flujo entero un martes a las 3 PM.
+ *
+ * ⚠️ PONER EN `false` ANTES DE SALIR A PRODUCCIÓN. Con eso solo, vuelve el
+ * comportamiento del brief: fuera de horario no se puede pedir.
+ */
+export const MODO_DEMO = true;
+
+/**
  * Horario de atención: jueves a domingo, 6:00–11:00 PM (hora de Caracas).
  * Días en formato de Date.getDay(): 0 = domingo … 6 = sábado.
  */

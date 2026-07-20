@@ -42,11 +42,13 @@ export function Hero({ estado }: { estado: EstadoNegocio }) {
           >
             Ver el menú
           </a>
+          {/* TODO(fase 1, paso 5): abre el carrito / flujo de pedido en vez de
+              bajar al menú. Hoy ambos CTAs hacen lo mismo. */}
           <a
             href="#menu"
             className="rounded-full px-6.5 py-3.5 font-display text-[17px] uppercase tracking-[0.03em] text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,.22)] transition-shadow hover:shadow-[inset_0_0_0_2px_#fff]"
           >
-            {estado.abierto ? "Pedir ahora" : "Ver precios"}
+            Pedir ahora
           </a>
         </div>
       </div>

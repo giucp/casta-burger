@@ -42,12 +42,18 @@ npm run dev
 - **Fotos de producto**: hoy son placeholders monolínea.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER` sin definir.
 - `TASA_BCV` está fija en `src/lib/config.ts`; va a `settings.tasa_bcv`.
-- **Handle de redes**: el brief dice `@puracasta_`, el menú impreso dice
-  `CASTABURGER`. Hoy se usa el del brief; falta confirmar cuál es el bueno.
-- **Comportamiento fuera de horario**: el §5 del brief pide deshabilitar los
-  botones "Agregar" cuando está cerrado. Hoy quedan rojos y activos (decisión de
-  diseño, para no matar la página fuera de horario); el freno vive en el sello y
-  en la barra del carrito. Falta definir si se permite armar el pedido cerrado.
+- **Los dos CTA del hero hacen lo mismo** (bajan al menú). "Pedir ahora" debe
+  abrir el flujo de pedido cuando exista el carrito.
+
+## ⚠️ Antes de salir a producción
+
+Poner `MODO_DEMO = false` en [`src/lib/config.ts`](src/lib/config.ts).
+
+Mientras está en `true`, la web deja pedir aunque el local esté cerrado, para
+poder mostrar el diseño funcionando a cualquier hora. En `false` vuelve el
+comportamiento del §5 del brief: fuera de horario los botones "Agregar" se
+deshabilitan y la barra inferior avisa cuándo abrimos. El sello Abierto/Cerrado
+dice la verdad siempre, en los dos modos.
 
 ## Entrega
 

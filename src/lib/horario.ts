@@ -1,4 +1,4 @@
-import { BUSINESS, HORARIO } from "./config";
+import { BUSINESS, HORARIO, MODO_DEMO } from "./config";
 
 const DIAS_ES = [
   "domingo",
@@ -44,7 +44,13 @@ function ahoraEnCaracas(now: Date): { dia: number; hora: number } {
 }
 
 export type EstadoNegocio = {
+  /** Si el local está realmente abierto ahora. Es lo que muestra el sello. */
   abierto: boolean;
+  /**
+   * Si la interfaz deja pedir. En producción es igual a `abierto` (§5 del
+   * brief); en modo demo siempre es `true` para poder recorrer el flujo.
+   */
+  puedePedir: boolean;
   /** Texto del sello: "Abierto" / "Cerrado" */
   etiqueta: string;
   /** Mensaje de cuándo volvemos, solo cuando está cerrado */
@@ -66,11 +72,17 @@ export function estadoNegocio(now: Date = new Date()): EstadoNegocio {
   const abierto = enHorario && BUSINESS.aceptaPedidos;
 
   if (abierto) {
-    return { abierto: true, etiqueta: "Abierto", proximaApertura: null };
+    return {
+      abierto: true,
+      puedePedir: true,
+      etiqueta: "Abierto",
+      proximaApertura: null,
+    };
   }
 
   return {
     abierto: false,
+    puedePedir: MODO_DEMO,
     etiqueta: "Cerrado",
     proximaApertura: BUSINESS.aceptaPedidos
       ? `Abrimos ${proximoDiaAbierto(dia, hora)} a las 6:00 PM`

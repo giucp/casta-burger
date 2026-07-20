@@ -40,7 +40,7 @@ function ListaSimple({ categoria }: { categoria: "Extras" | "Bebidas" }) {
   );
 }
 
-export function Menu() {
+export function Menu({ puedePedir }: { puedePedir: boolean }) {
   return (
     <section id="menu" className="bg-bone text-bone-ink">
       <div className="mx-auto max-w-[1080px] px-5 pt-12 pb-13">
@@ -53,7 +53,7 @@ export function Menu() {
           {PRESENTACIONES.whiteMeal.detalle}
         </p>
         {porCategoria("Burgers").map((item) => (
-          <MenuCard key={item.id} item={item} />
+          <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
         ))}
         <p className="mt-4 font-mono text-[11px] text-bone-mute">
           Nota: por {usd(PAPAS_ADICIONAL.precio)} adicional por hamburguesa,{" "}
@@ -64,7 +64,7 @@ export function Menu() {
           <SecHead titulo="Combo" />
         </div>
         {porCategoria("Combo").map((item) => (
-          <MenuCard key={item.id} item={item} />
+          <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
         ))}
 
         <div className="mt-9.5">

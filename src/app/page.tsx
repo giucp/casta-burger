@@ -19,7 +19,7 @@ export default function Home() {
       <TopBar estado={estado} />
       <main className="flex-1">
         <Hero estado={estado} />
-        <Menu />
+        <Menu puedePedir={estado.puedePedir} />
       </main>
       <Footer />
       <CartBar estado={estado} />
