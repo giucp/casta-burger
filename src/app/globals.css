@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* ============================================================
+   CASTA BURGER — sistema de diseño (§3 del brief)
+   Rojo ladrillo sobre negro plano. El menú voltea la paleta
+   a un panel "hueso". Precios en mono estilo ticket.
+   ============================================================ */
+
+@theme {
+  /* Color */
+  --color-ink: #0c0c0c; /* fondo base, negro plano (SIN glow) */
+  --color-char: #17120e; /* superficies oscuras / footer */
+  --color-card: #1c1712; /* tarjetas sobre oscuro */
+  --color-casta: #c02830; /* ROJO CASTA — del logo, no chillón */
+  --color-casta-deep: #97202a; /* rojo pressed / hover */
+  --color-bone: #f2ecde; /* panel "papel" del menú */
+  --color-bone-ink: #1a140f; /* texto sobre hueso */
+  --color-bone-line: #d8cfbb; /* divisores sobre hueso */
+  --color-bone-soft: #5c5344; /* texto secundario sobre hueso */
+  --color-bone-mute: #8a7f6a; /* mono secundario sobre hueso */
+  --color-smoke: #948b82; /* texto secundario sobre oscuro */
+  --color-ash: #d6cfc7; /* cuerpo sobre oscuro */
+
+  /* Tipografía */
+  --font-display: var(--font-anton), sans-serif; /* títulos, impactos */
+  --font-sans: var(--font-inter), sans-serif; /* cuerpo, UI */
+  --font-mono: var(--font-space-mono), monospace; /* datos: precios, Bs, estados */
+
+  /* Radios */
+  --radius-card: 14px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--color-ink);
+    color: #fff;
+    font-family: var(--font-sans);
+    line-height: 1.5;
+  }
+
+  /* Foco de teclado visible — piso de calidad del §3 */
+  :focus-visible {
+    outline: 2px solid var(--color-casta);
+    outline-offset: 3px;
+  }
+
+  .bg-bone :focus-visible,
+  .bg-bone :focus-visible ~ * {
+    outline-color: var(--color-bone-ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
