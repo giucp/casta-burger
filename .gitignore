@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Menú impreso del negocio: fuente de los precios, no versionado por ahora
+Copia de MENU CASTA.pdf

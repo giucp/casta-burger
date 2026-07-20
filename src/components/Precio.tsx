@@ -8,9 +8,17 @@ export function Precio({
   monto,
   conBs = true,
 }: {
-  monto: number;
+  monto: number | null;
   conBs?: boolean;
 }) {
+  if (monto === null) {
+    return (
+      <span className="whitespace-nowrap text-right font-mono text-[11px] uppercase tracking-[0.08em] text-bone-mute">
+        Consultar
+      </span>
+    );
+  }
+
   return (
     <span className="whitespace-nowrap text-right font-mono text-base font-bold">
       {usd(monto)}

@@ -26,6 +26,7 @@ npm run dev
 - [x] Sistema de diseño: tokens de color, Anton / Inter / Space Mono, sello, botones
 - [x] Web pública estática: top bar, hero, menú (panel hueso), footer
 - [x] Estado abierto/cerrado real, calculado contra `America/Caracas`
+- [x] Precios reales del menú impreso, con las dos presentaciones (Sola / White Meal)
 - [ ] Carrito + selector de proteína y extras
 - [ ] Supabase: schema, menú en base de datos
 - [ ] Flujo de pedido → WhatsApp
@@ -36,10 +37,17 @@ npm run dev
 
 ## Pendientes conocidos
 
-- **Precios placeholder** en `src/lib/menu.ts` — hay que poner los reales.
+- **Bebidas sin precio**: el menú impreso no los trae. Se muestran como "Consultar"
+  hasta que el negocio los confirme.
 - **Fotos de producto**: hoy son placeholders monolínea.
 - `NEXT_PUBLIC_WHATSAPP_NUMBER` sin definir.
 - `TASA_BCV` está fija en `src/lib/config.ts`; va a `settings.tasa_bcv`.
+- **Handle de redes**: el brief dice `@puracasta_`, el menú impreso dice
+  `CASTABURGER`. Hoy se usa el del brief; falta confirmar cuál es el bueno.
+- **Comportamiento fuera de horario**: el §5 del brief pide deshabilitar los
+  botones "Agregar" cuando está cerrado. Hoy quedan rojos y activos (decisión de
+  diseño, para no matar la página fuera de horario); el freno vive en el sello y
+  en la barra del carrito. Falta definir si se permite armar el pedido cerrado.
 
 ## Entrega
 
