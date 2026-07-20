@@ -1,9 +1,16 @@
+"use client";
+
 import { BUSINESS, HORARIO } from "@/lib/config";
 import type { EstadoNegocio } from "@/lib/horario";
+import { useCart } from "./cart/CartProvider";
+import { useCartUI } from "./cart/CartUI";
 import { Stamp } from "./Stamp";
 import { CartIcon, LogoMark } from "./icons";
 
 export function TopBar({ estado }: { estado: EstadoNegocio }) {
+  const { cantidad } = useCart();
+  const { abrirCarrito } = useCartUI();
+
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-ink/86 backdrop-blur-[10px]">
       <div className="mx-auto flex h-15 max-w-[1080px] items-center gap-3.5 px-5">
@@ -22,15 +29,18 @@ export function TopBar({ estado }: { estado: EstadoNegocio }) {
           {estado.etiqueta}
         </Stamp>
 
-        {/* TODO(fase 1, paso 5): conectar al carrito real */}
-        <button
-          type="button"
-          disabled
-          aria-label="Ver carrito (aún no disponible)"
-          className="hidden items-center gap-2 rounded-full bg-casta px-3.5 py-2 font-mono text-[13px] font-bold text-white disabled:opacity-45 sm:inline-flex"
-        >
-          <CartIcon className="size-4" />0
-        </button>
+        {/* Solo aparece cuando hay algo: un carrito en 0 es ruido */}
+        {cantidad > 0 && (
+          <button
+            type="button"
+            onClick={abrirCarrito}
+            aria-label={`Ver pedido, ${cantidad} items`}
+            className="inline-flex items-center gap-2 rounded-full bg-casta px-3.5 py-2 font-mono text-[13px] font-bold text-white transition-colors hover:bg-casta-deep"
+          >
+            <CartIcon className="size-4" />
+            {cantidad}
+          </button>
+        )}
       </div>
       <span className="sr-only">
         {BUSINESS.nombre} — {HORARIO.etiqueta}

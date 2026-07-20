@@ -1,4 +1,6 @@
 import { CartBar } from "@/components/CartBar";
+import { CartProvider } from "@/components/cart/CartProvider";
+import { CartUIProvider } from "@/components/cart/CartUI";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { Menu } from "@/components/Menu";
@@ -15,14 +17,16 @@ export default function Home() {
   const estado = estadoNegocio();
 
   return (
-    <>
-      <TopBar estado={estado} />
-      <main className="flex-1">
-        <Hero estado={estado} />
-        <Menu puedePedir={estado.puedePedir} />
-      </main>
-      <Footer />
-      <CartBar estado={estado} />
-    </>
+    <CartProvider>
+      <CartUIProvider>
+        <TopBar estado={estado} />
+        <main className="flex-1">
+          <Hero estado={estado} />
+          <Menu puedePedir={estado.puedePedir} />
+        </main>
+        <Footer />
+        <CartBar estado={estado} />
+      </CartUIProvider>
+    </CartProvider>
   );
 }

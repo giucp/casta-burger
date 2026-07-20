@@ -1,5 +1,8 @@
+"use client";
+
 import { PRESENTACIONES, type MenuItem } from "@/lib/menu";
 import { usd } from "@/lib/format";
+import { useCartUI } from "./cart/CartUI";
 import { BurgerGlyph } from "./icons";
 import { Precio } from "./Precio";
 
@@ -14,8 +17,11 @@ export function MenuCard({
   item: MenuItem;
   puedePedir: boolean;
 }) {
+  const { abrirProducto } = useCartUI();
+
   const agotado = !item.disponible;
-  const deshabilitado = agotado || !puedePedir;
+  // Sin precio definido no se puede pedir (hoy: las bebidas)
+  const deshabilitado = agotado || !puedePedir || item.precio === null;
 
   return (
     <article
@@ -72,6 +78,7 @@ export function MenuCard({
         <button
           type="button"
           disabled={deshabilitado}
+          onClick={() => abrirProducto(item)}
           className={[
             "rounded-full px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white",
             "transition-transform duration-75 active:scale-94",

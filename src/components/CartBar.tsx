@@ -1,12 +1,17 @@
+"use client";
+
+import { usd } from "@/lib/format";
 import type { EstadoNegocio } from "@/lib/horario";
+import { useCart } from "./cart/CartProvider";
+import { useCartUI } from "./cart/CartUI";
 
 /**
  * Carrito fijo inferior (§3). Barra roja con conteo y total en USD.
- *
- * TODO(fase 1, paso 5): hoy es solo el chasis visual. Falta el estado del
- * carrito, el selector de proteína/extras y el flujo a "Ver pedido".
  */
 export function CartBar({ estado }: { estado: EstadoNegocio }) {
+  const { cantidad, subtotal } = useCart();
+  const { abrirCarrito } = useCartUI();
+
   if (!estado.puedePedir) {
     return (
       <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3.5 border-t border-white/8 bg-char px-5 py-3.5 shadow-[0_-8px_30px_rgba(0,0,0,.4)]">
@@ -20,14 +25,27 @@ export function CartBar({ estado }: { estado: EstadoNegocio }) {
     );
   }
 
+  const vacio = cantidad === 0;
+
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3.5 bg-casta px-5 py-3.5 text-white shadow-[0_-8px_30px_rgba(0,0,0,.4)]">
-      <span className="font-mono text-[13px] font-bold">0 items</span>
-      <span className="font-mono text-xs opacity-85">$0.00</span>
+      {vacio ? (
+        <span className="font-mono text-xs opacity-85">
+          Elegí algo del menú
+        </span>
+      ) : (
+        <>
+          <span className="font-mono text-[13px] font-bold">
+            {cantidad} {cantidad === 1 ? "item" : "items"}
+          </span>
+          <span className="font-mono text-xs opacity-85">{usd(subtotal)}</span>
+        </>
+      )}
       <button
         type="button"
-        disabled
-        className="ml-auto rounded-full bg-ink px-5.5 py-2.75 font-display text-base uppercase tracking-[0.03em] text-white disabled:opacity-45"
+        disabled={vacio}
+        onClick={abrirCarrito}
+        className="ml-auto shrink-0 whitespace-nowrap rounded-full bg-ink px-5.5 py-2.75 font-display text-base uppercase tracking-[0.03em] text-white transition-opacity disabled:opacity-45"
       >
         Ver pedido
       </button>

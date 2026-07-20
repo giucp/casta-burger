@@ -27,9 +27,10 @@ npm run dev
 - [x] Web pública estática: top bar, hero, menú (panel hueso), footer
 - [x] Estado abierto/cerrado real, calculado contra `America/Caracas`
 - [x] Precios reales del menú impreso, con las dos presentaciones (Sola / White Meal)
-- [ ] Carrito + selector de proteína y extras
-- [ ] Supabase: schema, menú en base de datos
-- [ ] Flujo de pedido → WhatsApp
+- [x] Carrito + selector de proteína, presentación, papás y extras
+- [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
+- [ ] Supabase: schema, menú en base de datos, guardar el pedido
+- [ ] N° de pedido (sale de Supabase; hoy el mensaje va sin número)
 - [ ] Auth del dueño (magic link) + `/admin`
 - [ ] Pantalla de cocina en vivo (Realtime) + sonido
 - [ ] Aviso por Telegram
@@ -44,6 +45,10 @@ npm run dev
 - `TASA_BCV` está fija en `src/lib/config.ts`; va a `settings.tasa_bcv`.
 - **Los dos CTA del hero hacen lo mismo** (bajan al menú). "Pedir ahora" debe
   abrir el flujo de pedido cuando exista el carrito.
+- **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
+  se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
+- **El carrito no sobrevive al refresco** de la página (vive en memoria). Si se
+  quiere que aguante, va a `localStorage`.
 
 ## ⚠️ Antes de salir a producción
 
