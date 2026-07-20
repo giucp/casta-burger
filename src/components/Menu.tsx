@@ -33,7 +33,7 @@ function ListaSimple({ categoria }: { categoria: "Extras" | "Bebidas" }) {
           className="flex items-baseline justify-between gap-3 border-b border-dotted border-bone-line py-2.5 text-sm"
         >
           <span>{item.nombre}</span>
-          <Precio monto={item.precio} conBs={false} />
+          <Precio monto={item.precio} />
         </li>
       ))}
     </ul>

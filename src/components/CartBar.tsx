@@ -1,7 +1,7 @@
 import type { EstadoNegocio } from "@/lib/horario";
 
 /**
- * Carrito fijo inferior (§3). Barra roja con conteo, total en $ y ≈ Bs.
+ * Carrito fijo inferior (§3). Barra roja con conteo y total en USD.
  *
  * TODO(fase 1, paso 5): hoy es solo el chasis visual. Falta el estado del
  * carrito, el selector de proteína/extras y el flujo a "Ver pedido".
@@ -23,7 +23,7 @@ export function CartBar({ estado }: { estado: EstadoNegocio }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 flex items-center gap-3.5 bg-casta px-5 py-3.5 text-white shadow-[0_-8px_30px_rgba(0,0,0,.4)]">
       <span className="font-mono text-[13px] font-bold">0 items</span>
-      <span className="font-mono text-xs opacity-85">$0.00 · ≈ Bs. 0</span>
+      <span className="font-mono text-xs opacity-85">$0.00</span>
       <button
         type="button"
         disabled
