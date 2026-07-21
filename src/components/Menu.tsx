@@ -3,6 +3,7 @@ import {
   porCategoria,
   PRESENTACIONES,
   PROTEINAS,
+  type MenuItem,
 } from "@/lib/menu";
 import { usd } from "@/lib/format";
 import { MenuCard } from "./MenuCard";
@@ -24,10 +25,10 @@ function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
 }
 
 /** Lista simple a dos columnas — para Extras y Bebidas. */
-function ListaSimple({ categoria }: { categoria: "Extras" | "Bebidas" }) {
+function ListaSimple({ items }: { items: MenuItem[] }) {
   return (
     <ul className="mt-2 grid gap-x-5 gap-y-2.5 sm:grid-cols-2">
-      {porCategoria(categoria).map((item) => (
+      {items.map((item) => (
         <li
           key={item.id}
           className="flex items-baseline justify-between gap-3 border-b border-dotted border-bone-line py-2.5 text-sm"
@@ -40,42 +41,82 @@ function ListaSimple({ categoria }: { categoria: "Extras" | "Bebidas" }) {
   );
 }
 
-export function Menu({ puedePedir }: { puedePedir: boolean }) {
+export function Menu({
+  items,
+  puedePedir,
+}: {
+  items: MenuItem[];
+  puedePedir: boolean;
+}) {
+  const burgers = porCategoria(items, "Burgers");
+  const combos = porCategoria(items, "Combo");
+  const extras = porCategoria(items, "Extras");
+  const bebidas = porCategoria(items, "Bebidas");
+
+  if (items.length === 0) {
+    return (
+      <section id="menu" className="bg-bone text-bone-ink">
+        <div className="mx-auto max-w-[1080px] px-5 py-16 text-center">
+          <p className="font-display text-3xl uppercase">Menú no disponible</p>
+          <p className="mt-2 text-sm text-bone-soft">
+            Escribinos por WhatsApp y te decimos qué hay hoy.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="menu" className="bg-bone text-bone-ink">
       <div className="mx-auto max-w-[1080px] px-5 pt-12 pb-13">
-        <SecHead
-          titulo="Burgers"
-          nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
-        />
-        <p className="-mt-3 mb-4 font-mono text-[11px] uppercase tracking-[0.08em] text-bone-mute">
-          {PRESENTACIONES.whiteMeal.etiqueta} ={" "}
-          {PRESENTACIONES.whiteMeal.detalle}
-        </p>
-        {porCategoria("Burgers").map((item) => (
-          <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
-        ))}
-        <p className="mt-4 font-mono text-[11px] text-bone-mute">
-          Nota: por {usd(PAPAS_ADICIONAL.precio)} adicional por hamburguesa,{" "}
-          {PAPAS_ADICIONAL.etiqueta}.
-        </p>
+        {burgers.length > 0 && (
+          <>
+            <SecHead
+              titulo="Burgers"
+              nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
+            />
+            <p className="-mt-3 mb-4 font-mono text-[11px] uppercase tracking-[0.08em] text-bone-mute">
+              {PRESENTACIONES.whiteMeal.etiqueta} ={" "}
+              {PRESENTACIONES.whiteMeal.detalle}
+            </p>
+            {burgers.map((item) => (
+              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
+            ))}
+            <p className="mt-4 font-mono text-[11px] text-bone-mute">
+              Nota: por {usd(PAPAS_ADICIONAL.precio)} adicional por hamburguesa,{" "}
+              {PAPAS_ADICIONAL.etiqueta}.
+            </p>
+          </>
+        )}
 
-        <div className="mt-9.5">
-          <SecHead titulo="Combo" />
-        </div>
-        {porCategoria("Combo").map((item) => (
-          <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
-        ))}
+        {combos.length > 0 && (
+          <>
+            <div className="mt-9.5">
+              <SecHead titulo="Combo" />
+            </div>
+            {combos.map((item) => (
+              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
+            ))}
+          </>
+        )}
 
-        <div className="mt-9.5">
-          <SecHead titulo="Extras" />
-        </div>
-        <ListaSimple categoria="Extras" />
+        {extras.length > 0 && (
+          <>
+            <div className="mt-9.5">
+              <SecHead titulo="Extras" />
+            </div>
+            <ListaSimple items={extras} />
+          </>
+        )}
 
-        <div className="mt-9.5">
-          <SecHead titulo="Bebidas" />
-        </div>
-        <ListaSimple categoria="Bebidas" />
+        {bebidas.length > 0 && (
+          <>
+            <div className="mt-9.5">
+              <SecHead titulo="Bebidas" />
+            </div>
+            <ListaSimple items={bebidas} />
+          </>
+        )}
       </div>
     </section>
   );

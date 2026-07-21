@@ -1,23 +1,31 @@
-import {
-  porCategoria,
-  type MenuItem,
-  type Presentacion,
-  type Proteina,
-} from "./menu";
+import type { MenuItem, Presentacion, Proteina } from "./menu";
+
+/** Un extra ya elegido: viaja con su nombre y precio. */
+export type ExtraElegido = {
+  /** id de la fila en `menu_items` */
+  id: string;
+  nombre: string;
+  precio: number;
+};
 
 /**
  * Opciones elegidas para una línea del pedido.
  *
- * Calca el `opciones jsonb` del §4 del brief: es lo que se va a guardar tal
- * cual en `order_items.opciones` cuando entre Supabase.
+ * Calca el `opciones jsonb` del §4 del brief: es lo que se va a guardar en
+ * `order_items.opciones`.
+ *
+ * Los extras guardan nombre y precio, no solo el id. Así el carrito no
+ * necesita consultar el menú para mostrar ni para sumar — y de paso la línea
+ * queda con el precio que se le cobró al cliente, aunque el menú cambie
+ * después, que es la misma razón por la que `order_items` guarda copia del
+ * nombre y el precio.
  */
 export type OpcionesLinea = {
   proteina?: Proteina;
   presentacion?: Presentacion;
   /** Adicional de 150 g de papás */
   papas?: boolean;
-  /** ids de items de la categoría Extras */
-  extras: string[];
+  extras: ExtraElegido[];
 };
 
 export type LineaCarrito = {
@@ -34,15 +42,7 @@ export type LineaCarrito = {
 
 export const PAPAS_PRECIO = 2.5;
 
-/** Los extras que se pueden sumar a una línea, con su precio. */
-export function extrasDisponibles(): MenuItem[] {
-  return porCategoria("Extras");
-}
-
-/**
- * Precio de una unidad: base según presentación, más papás, más extras.
- * Todo en USD.
- */
+/** Precio de una unidad: base según presentación, más papás, más extras. */
 export function precioUnitario(
   item: MenuItem,
   opciones: OpcionesLinea,
@@ -53,10 +53,7 @@ export function precioUnitario(
       : (item.precio ?? 0);
 
   const papas = opciones.papas ? PAPAS_PRECIO : 0;
-
-  const extras = extrasDisponibles()
-    .filter((e) => opciones.extras.includes(e.id))
-    .reduce((suma, e) => suma + (e.precio ?? 0), 0);
+  const extras = opciones.extras.reduce((suma, e) => suma + e.precio, 0);
 
   return base + papas + extras;
 }
@@ -76,7 +73,10 @@ export function claveLinea(
     opciones.proteina ?? "-",
     opciones.presentacion ?? "-",
     opciones.papas ? "papas" : "-",
-    [...opciones.extras].sort().join("+") || "-",
+    opciones.extras
+      .map((e) => e.id)
+      .sort()
+      .join("+") || "-",
     nota?.trim() || "-",
   ].join("|");
 }
@@ -100,11 +100,7 @@ export function describirOpciones(opciones: OpcionesLinea): string[] {
   if (opciones.proteina) partes.push(opciones.proteina);
   if (opciones.presentacion === "whiteMeal") partes.push("White Meal");
   if (opciones.papas) partes.push("con papás");
-
-  const extras = extrasDisponibles().filter((e) =>
-    opciones.extras.includes(e.id),
-  );
-  for (const extra of extras) partes.push(extra.nombre);
+  for (const extra of opciones.extras) partes.push(extra.nombre);
 
   return partes;
 }

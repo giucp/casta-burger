@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import {
-  extrasDisponibles,
   PAPAS_PRECIO,
   precioUnitario,
+  type ExtraElegido,
   type OpcionesLinea,
 } from "@/lib/cart";
 import { usd } from "@/lib/format";
@@ -65,9 +65,12 @@ function Grupo({
 
 export function ProductSheet({
   item,
+  extras: catalogoExtras,
   onClose,
 }: {
   item: MenuItem;
+  /** Los productos de la categoría Extras, para poder sumarlos a la línea */
+  extras: MenuItem[];
   onClose: () => void;
 }) {
   const { agregar } = useCart();
@@ -81,7 +84,7 @@ export function ProductSheet({
   const [proteina, setProteina] = useState<Proteina>(PROTEINAS[0]);
   const [presentacion, setPresentacion] = useState<Presentacion>("only");
   const [papas, setPapas] = useState(false);
-  const [extras, setExtras] = useState<string[]>([]);
+  const [extras, setExtras] = useState<ExtraElegido[]>([]);
   const [cantidad, setCantidad] = useState(1);
   const [nota, setNota] = useState("");
 
@@ -95,11 +98,14 @@ export function ProductSheet({
   const unitario = precioUnitario(item, opciones);
   const total = unitario * cantidad;
 
-  const alternarExtra = (id: string) =>
+  const alternarExtra = (extra: MenuItem) =>
     setExtras((actuales) =>
-      actuales.includes(id)
-        ? actuales.filter((e) => e !== id)
-        : [...actuales, id],
+      actuales.some((e) => e.id === extra.id)
+        ? actuales.filter((e) => e.id !== extra.id)
+        : [
+            ...actuales,
+            { id: extra.id, nombre: extra.nombre, precio: extra.precio ?? 0 },
+          ],
     );
 
   const confirmar = () => {
@@ -172,11 +178,11 @@ export function ProductSheet({
 
       {llevaExtras && (
         <Grupo titulo="Extras">
-          {extrasDisponibles().map((extra) => (
+          {catalogoExtras.map((extra) => (
             <Opcion
               key={extra.id}
-              activa={extras.includes(extra.id)}
-              onClick={() => alternarExtra(extra.id)}
+              activa={extras.some((e) => e.id === extra.id)}
+              onClick={() => alternarExtra(extra)}
             >
               {extra.nombre} · +{usd(extra.precio ?? 0)}
             </Opcion>

@@ -33,8 +33,9 @@ npm run dev
 - [x] Back-office `/admin`: Números (ganancia neta), Inventario, Compras — **con
       datos de ejemplo**
 - [x] Auth del dueño por magic link, `/admin` protegido por middleware
-- [ ] Correr la migración en Supabase
-- [ ] Menú en base de datos + CRUD desde `/admin`
+- [x] Migración corrida en Supabase
+- [x] Menú leído desde la base (`menu_items`)
+- [ ] CRUD del menú desde `/admin`
 - [ ] Guardar el pedido al confirmar, y el N° de pedido en el mensaje
 - [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
 - [ ] Aviso por Telegram

@@ -16,7 +16,14 @@ const CartUIContext = createContext<CartUIValue | null>(null);
  * Dueño de "qué panel está abierto". Vive aparte del estado del carrito para
  * que los sheets puedan usar `useCart` sin importarse en círculo.
  */
-export function CartUIProvider({ children }: { children: React.ReactNode }) {
+export function CartUIProvider({
+  extras,
+  children,
+}: {
+  /** Catálogo de la categoría Extras, viene del servidor */
+  extras: MenuItem[];
+  children: React.ReactNode;
+}) {
   const [producto, setProducto] = useState<MenuItem | null>(null);
   const [carrito, setCarrito] = useState(false);
 
@@ -32,7 +39,11 @@ export function CartUIProvider({ children }: { children: React.ReactNode }) {
     <CartUIContext value={valor}>
       {children}
       {producto && (
-        <ProductSheet item={producto} onClose={() => setProducto(null)} />
+        <ProductSheet
+          item={producto}
+          extras={extras}
+          onClose={() => setProducto(null)}
+        />
       )}
       {carrito && <CartPanel onClose={() => setCarrito(false)} />}
     </CartUIContext>
