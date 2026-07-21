@@ -94,11 +94,14 @@ público con `check (true)`, así que se podría crear un pedido con un total qu
 no corresponde a los precios reales. Lo correcto es mover la creación del
 pedido a una Edge Function que calcule el total del lado del servidor.
 
-**3. Pasar Vercel a plan Pro.** El plan gratis prohíbe el uso comercial (§1 del
-brief). Para probar alcanza; para tomar pedidos de un negocio real, no.
-
-**4. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
+**3. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
 proyecto de Supabase, Vercel y dominio.
+
+## Decisiones tomadas
+
+**Vercel arranca en plan gratis.** El §1 del brief pedía Pro desde el inicio.
+Se decidió empezar en el plan gratis y pasar a Pro cuando el volumen del
+negocio lo justifique. Punto cerrado, no hace falta volver a plantearlo.
 
 ## Entrega
 
