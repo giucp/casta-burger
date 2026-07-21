@@ -124,7 +124,7 @@ insert into settings (id, whatsapp) values (1, '584227105981')
 -- ============================================================
 --  6) VISTAS DE FINANZAS
 --
---  ⚠️ `security_invoker = true` NO es opcional.
+--  IMPORTANTE: `security_invoker = true` NO es opcional.
 --  Una vista de Postgres corre con los permisos de quien la creó (postgres),
 --  así que por defecto SE SALTA el RLS de las tablas que consulta. Sin esta
 --  opción, cualquiera con la llave pública podría leer resumen_diario y ver

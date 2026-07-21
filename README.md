@@ -31,10 +31,11 @@ npm run dev
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
 - [x] Pantalla de cocina: tarjetas por estado, filtros, sonido — **con datos de ejemplo**
 - [x] Back-office `/admin`: Números (ganancia neta), Inventario, Compras — **con
-      datos de ejemplo**, sin base de datos y sin login
-- [ ] Supabase: schema, menú en base de datos, guardar el pedido
-- [ ] N° de pedido (sale de Supabase; hoy el mensaje va sin número)
-- [ ] Auth del dueño (magic link) + `/admin`
+      datos de ejemplo**
+- [x] Auth del dueño por magic link, `/admin` protegido por middleware
+- [ ] Correr la migración en Supabase
+- [ ] Menú en base de datos + CRUD desde `/admin`
+- [ ] Guardar el pedido al confirmar, y el N° de pedido en el mensaje
 - [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
 - [ ] Aviso por Telegram
 - [ ] Deploy en Vercel
@@ -44,8 +45,6 @@ npm run dev
 - **Bebidas sin precio**: el menú impreso no los trae. Se muestran como "Consultar"
   hasta que el negocio los confirme.
 - **Fotos de producto**: hoy son placeholders monolínea.
-- `NEXT_PUBLIC_WHATSAPP_NUMBER` sin definir.
-- `TASA_BCV` está fija en `src/lib/config.ts`; va a `settings.tasa_bcv`.
 - **Los dos CTA del hero hacen lo mismo** (bajan al menú). "Pedir ahora" debe
   abrir el flujo de pedido cuando exista el carrito.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
@@ -53,19 +52,23 @@ npm run dev
 - **El carrito no sobrevive al refresco** de la página (vive en memoria). Si se
   quiere que aguante, va a `localStorage`.
 
-## ⚠️ Antes de salir a producción
+## Antes de salir a producción
 
-**1. `/admin` no tiene login.** Hoy cualquiera con el link ve y edita los
-números del negocio. Falta el magic link de Supabase Auth y proteger `/admin/*`
-(§6 del brief). Esto es bloqueante para el deploy.
-
-**2. Poner `MODO_DEMO = false`** en [`src/lib/config.ts`](src/lib/config.ts).
+**1. Poner `MODO_DEMO = false`** en [`src/lib/config.ts`](src/lib/config.ts).
 
 Mientras está en `true`, la web deja pedir aunque el local esté cerrado, para
 poder mostrar el diseño funcionando a cualquier hora. En `false` vuelve el
 comportamiento del §5 del brief: fuera de horario los botones "Agregar" se
 deshabilitan y la barra inferior avisa cuándo abrimos. El sello Abierto/Cerrado
 dice la verdad siempre, en los dos modos.
+
+**2. Cerrar el alta pública de pedidos.** Hoy `orders` acepta inserts del
+público con `check (true)`, así que se podría crear un pedido con un total que
+no corresponde a los precios reales. Lo correcto es mover la creación del
+pedido a una Edge Function que calcule el total del lado del servidor.
+
+**3. Agregar el dominio de producción** a Authentication → URL Configuration en
+Supabase, o el magic link va a seguir apuntando a localhost.
 
 ## Entrega
 

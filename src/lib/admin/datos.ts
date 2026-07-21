@@ -1,7 +1,7 @@
 /**
  * Datos del back-office.
  *
- * ⚠️ TODO(fase 2): hoy son datos de ejemplo en memoria para poder construir y
+ * PENDIENTE(fase 2): hoy son datos de ejemplo en memoria para poder construir y
  * mostrar las pantallas sin Supabase. Los tipos calcan tablas y vistas de
  * `docs/schema_hamburguesas.sql`, así que enchufar la base es reemplazar el
  * cuerpo de las funciones de abajo por queries — sin tocar las pantallas.

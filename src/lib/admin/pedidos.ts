@@ -1,7 +1,7 @@
 /**
  * Pedidos para la pantalla de cocina.
  *
- * ⚠️ TODO(fase 1, paso 7): hoy son datos de ejemplo. Los tipos calcan las
+ * PENDIENTE(fase 1, paso 7): hoy son datos de ejemplo. Los tipos calcan las
  * tablas `orders` y `order_items` de `docs/schema_hamburguesas.sql`, así que
  * conectar Supabase Realtime es reemplazar la fuente sin tocar la pantalla.
  */

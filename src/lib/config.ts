@@ -20,7 +20,7 @@ export const BUSINESS = {
  * es lo correcto en producción. Pero mientras se muestra el diseño hace falta
  * poder recorrer el flujo entero un martes a las 3 PM.
  *
- * ⚠️ PONER EN `false` ANTES DE SALIR A PRODUCCIÓN. Con eso solo, vuelve el
+ * IMPORTANTE: PONER EN `false` ANTES DE SALIR A PRODUCCIÓN. Con eso solo, vuelve el
  * comportamiento del brief: fuera de horario no se puede pedir.
  */
 export const MODO_DEMO = true;

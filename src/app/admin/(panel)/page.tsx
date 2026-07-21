@@ -69,7 +69,7 @@ export default function NumerosPage() {
       {bajoStock.length > 0 && (
         <div className="mb-7 rounded-card border border-casta/40 bg-casta/10 px-4 py-3.5">
           <p className="mb-1.5 font-mono text-[11px] font-bold uppercase tracking-[0.12em] text-casta">
-            ⚠ {bajoStock.length} en bajo stock
+            {bajoStock.length} en bajo stock
           </p>
           <p className="text-sm text-ash">
             {bajoStock.map((i) => i.nombre).join(" · ")}

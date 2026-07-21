@@ -65,7 +65,7 @@ function TarjetaPedido({
             {info.etiqueta}
           </span>
           <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.06em] text-smoke">
-            {pedido.tipo === "delivery" ? "🛵 Delivery" : "🏠 Retiro"}
+            {pedido.tipo === "delivery" ? "Delivery" : "Retiro"}
             {ahora !== null && ` · ${antiguedad(pedido.creadoISO, ahora)}`}
           </p>
         </div>
@@ -89,7 +89,10 @@ function TarjetaPedido({
             )}
             {linea.nota && (
               <p className="mt-0.5 rounded bg-amber-500/15 px-2 py-0.5 text-[12px] font-medium text-amber-300">
-                ⚠ {linea.nota}
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] opacity-80">
+                  Nota{" "}
+                </span>
+                {linea.nota}
               </p>
             )}
           </li>
@@ -101,7 +104,12 @@ function TarjetaPedido({
           {pedido.clienteNombre} · {pedido.clienteTel}
         </p>
         {pedido.direccion && <p className="mt-0.5">{pedido.direccion}</p>}
-        {pedido.nota && <p className="mt-0.5 text-amber-300">⚠ {pedido.nota}</p>}
+        {pedido.nota && (
+          <p className="mt-0.5 text-amber-300">
+            <span className="uppercase tracking-[0.1em] opacity-80">Nota </span>
+            {pedido.nota}
+          </p>
+        )}
       </div>
 
       {siguiente && (
@@ -227,7 +235,7 @@ export function Cocina({
               : "border-white/20 text-smoke hover:border-white/50 hover:text-white"
           }`}
         >
-          {activa ? "🔔 Sonido activo" : "🔕 Activar sonido"}
+          {activa ? "Sonido activo" : "Activar sonido"}
         </button>
 
         <button
