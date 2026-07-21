@@ -17,39 +17,6 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function BurgerArt({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 200 160" fill="none" aria-hidden>
-      <path
-        d="M28 96c0-26 20-46 72-46s72 20 72 46"
-        stroke="#C02830"
-        strokeWidth="4"
-      />
-      <path d="M24 96h152" stroke="#C02830" strokeWidth="4" />
-      <path
-        d="M30 108c8 6 20 6 28 0 8 6 20 6 28 0 8 6 20 6 28 0 8 6 20 6 28 0 8 6 16 6 24 2"
-        stroke="#C02830"
-        strokeWidth="4"
-      />
-      <path
-        d="M30 120c8 6 20 6 28 0 8 6 20 6 28 0 8 6 20 6 28 0 8 6 20 6 28 0"
-        stroke="#C02830"
-        strokeWidth="4"
-      />
-      <path
-        d="M34 132h132c0 8-8 14-24 14H58c-16 0-24-6-24-14z"
-        stroke="#C02830"
-        strokeWidth="4"
-        strokeLinejoin="round"
-      />
-      <circle cx="66" cy="70" r="4" fill="#C02830" />
-      <circle cx="100" cy="66" r="4" fill="#C02830" />
-      <circle cx="134" cy="70" r="4" fill="#C02830" />
-    </svg>
-  );
-}
-
-/** Placeholder mientras no hay foto real del producto (§3: sustituir por fotos). */
 export function BurgerGlyph({
   className,
   apagado = false,
