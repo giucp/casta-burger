@@ -25,6 +25,8 @@ export default function Home() {
           <Menu puedePedir={estado.puedePedir} />
         </main>
         <Footer />
+        {/* Reserva el alto de la barra fija para que no tape el footer */}
+        <div aria-hidden className="h-21 shrink-0" />
         <CartBar estado={estado} />
       </CartUIProvider>
     </CartProvider>

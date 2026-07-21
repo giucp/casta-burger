@@ -29,6 +29,8 @@ npm run dev
 - [x] Precios reales del menú impreso, con las dos presentaciones (Sola / White Meal)
 - [x] Carrito + selector de proteína, presentación, papás y extras
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
+- [x] Back-office `/admin`: Números (ganancia neta), Inventario, Compras — **con
+      datos de ejemplo**, sin base de datos y sin login
 - [ ] Supabase: schema, menú en base de datos, guardar el pedido
 - [ ] N° de pedido (sale de Supabase; hoy el mensaje va sin número)
 - [ ] Auth del dueño (magic link) + `/admin`
@@ -52,7 +54,11 @@ npm run dev
 
 ## ⚠️ Antes de salir a producción
 
-Poner `MODO_DEMO = false` en [`src/lib/config.ts`](src/lib/config.ts).
+**1. `/admin` no tiene login.** Hoy cualquiera con el link ve y edita los
+números del negocio. Falta el magic link de Supabase Auth y proteger `/admin/*`
+(§6 del brief). Esto es bloqueante para el deploy.
+
+**2. Poner `MODO_DEMO = false`** en [`src/lib/config.ts`](src/lib/config.ts).
 
 Mientras está en `true`, la web deja pedir aunque el local esté cerrado, para
 poder mostrar el diseño funcionando a cualquier hora. En `false` vuelve el

@@ -41,7 +41,9 @@ export default function RootLayout({
       lang="es"
       className={`${anton.variable} ${inter.variable} ${spaceMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col pb-21">{children}</body>
+      {/* El espacio para la barra fija del carrito lo reserva la página
+          pública, no el body: /admin no tiene esa barra. */}
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
