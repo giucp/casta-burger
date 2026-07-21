@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogoMark } from "@/components/icons";
+import { LogoMarca } from "@/components/LogoMarca";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BotonSalir } from "@/components/admin/BotonSalir";
 import { createClient } from "@/lib/supabase/server";
@@ -26,7 +26,7 @@ export default async function AdminLayout({
     <div className="flex min-h-full flex-1 flex-col bg-ink">
       <header className="border-b border-white/8 bg-char">
         <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-5 py-3">
-          <LogoMark className="size-7 shrink-0" />
+          <LogoMarca className="size-8 shrink-0" />
           <span className="font-display text-lg uppercase tracking-[0.02em]">
             Casta <b className="font-normal text-casta">Admin</b>
           </span>

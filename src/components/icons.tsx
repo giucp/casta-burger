@@ -3,20 +3,6 @@
  * Se reusa en el logo, el arte del hero y el placeholder de las fotos del menú.
  */
 
-export function LogoMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 64 64" fill="none" aria-hidden>
-      <circle cx="32" cy="32" r="32" fill="#1C1712" />
-      <path
-        d="M20 42c-3-4-2-9 1-10 2-1 4 0 5 2 0-4 1-8 4-9 2-1 4 1 4 4 1-3 3-5 5-4 2 1 2 4 1 7 2-2 5-3 6-1 2 2 0 6-3 9-4 4-9 7-14 8-4 1-7-1-9-5z"
-        stroke="#C02830"
-        strokeWidth="2.4"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function BurgerGlyph({
   className,
   apagado = false,

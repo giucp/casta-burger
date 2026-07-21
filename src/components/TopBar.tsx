@@ -5,7 +5,8 @@ import type { EstadoNegocio } from "@/lib/horario";
 import { useCart } from "./cart/CartProvider";
 import { useCartUI } from "./cart/CartUI";
 import { Stamp } from "./Stamp";
-import { CartIcon, LogoMark } from "./icons";
+import { CartIcon } from "./icons";
+import { LogoMarca } from "./LogoMarca";
 
 export function TopBar({ estado }: { estado: EstadoNegocio }) {
   const { cantidad } = useCart();
@@ -14,7 +15,7 @@ export function TopBar({ estado }: { estado: EstadoNegocio }) {
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-ink/86 backdrop-blur-[10px]">
       <div className="mx-auto flex h-15 max-w-[1080px] items-center gap-3.5 px-5">
-        <LogoMark className="size-[34px] shrink-0" />
+        <LogoMarca className="size-10 shrink-0" />
         <span className="font-display text-xl uppercase tracking-[0.02em]">
           Casta <b className="font-normal text-casta">Burger</b>
         </span>

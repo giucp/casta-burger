@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/admin/LoginForm";
-import { LogoMark } from "@/components/icons";
+import { LogoMarca } from "@/components/LogoMarca";
 
 export const metadata = { title: "Entrar — Casta Admin" };
 
@@ -9,7 +9,7 @@ export default function LoginPage() {
     <div className="flex min-h-full flex-1 items-center justify-center bg-ink px-5 py-12">
       <div className="w-full max-w-[380px]">
         <div className="mb-7 flex items-center gap-3">
-          <LogoMark className="size-9 shrink-0" />
+          <LogoMarca className="size-11 shrink-0" />
           <span className="font-display text-2xl uppercase tracking-[0.02em]">
             Casta <b className="font-normal text-casta">Admin</b>
           </span>
