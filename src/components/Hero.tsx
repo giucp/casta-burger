@@ -15,9 +15,10 @@ export function Hero({ estado }: { estado: EstadoNegocio }) {
         width={599}
         height={441}
         priority
-        // En móvil se cruza con los botones, así que va más chica y tenue:
-        // ahí funciona como textura de fondo, no como ilustración.
-        className="pointer-events-none absolute -right-10 -bottom-10 z-1 w-[38%] opacity-35 sm:-right-8 sm:-bottom-6 sm:w-[min(48%,400px)] sm:opacity-100"
+        // Apoyada en el borde inferior, no cortada por él: hundida no se
+        // entiende que es una mano aplastando la carne en la plancha.
+        // En móvil va más chica y tenue porque se cruza con los botones.
+        className="pointer-events-none absolute right-0 bottom-0 z-1 w-[38%] opacity-35 sm:-right-4 sm:w-[min(46%,380px)] sm:opacity-100"
       />
 
       <div className="relative z-2 mx-auto max-w-[1080px] px-5 pt-10 pb-11">
@@ -54,13 +55,11 @@ export function Hero({ estado }: { estado: EstadoNegocio }) {
           >
             Ver el menú
           </a>
-          {/* TODO(fase 1, paso 5): abre el carrito / flujo de pedido en vez de
-              bajar al menú. Hoy ambos CTAs hacen lo mismo. */}
           <a
-            href="#menu"
+            href="#promos"
             className="rounded-full px-6.5 py-3.5 font-display text-[17px] uppercase tracking-[0.03em] text-white shadow-[inset_0_0_0_2px_rgba(255,255,255,.22)] transition-shadow hover:shadow-[inset_0_0_0_2px_#fff]"
           >
-            Pedir ahora
+            Promos
           </a>
         </div>
       </div>

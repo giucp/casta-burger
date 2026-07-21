@@ -8,6 +8,7 @@ import {
 import { usd } from "@/lib/format";
 import { MenuCard } from "./MenuCard";
 import { Precio } from "./Precio";
+import { Promos } from "./Promos";
 
 /** Encabezado de sección: título Anton + regla gruesa (§3). */
 function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
@@ -108,6 +109,11 @@ export function Menu({
             <ListaSimple items={extras} />
           </>
         )}
+
+        <div className="mt-9.5" id="promos">
+          <SecHead titulo="Promos" nota="se piden por WhatsApp" />
+        </div>
+        <Promos />
 
         {bebidas.length > 0 && (
           <>
