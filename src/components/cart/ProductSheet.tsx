@@ -75,9 +75,12 @@ export function ProductSheet({
 }) {
   const { agregar } = useCart();
 
+  // Una promo tiene precio cerrado: no se le elige presentación ni papás,
+  // pero sí la proteína de las burgers que la componen y extras aparte.
+  const esPromo = item.categoria === "Promos";
   const llevaProteina =
-    item.categoria === "Burgers" || item.categoria === "Combo";
-  const llevaPresentacion = item.precioWhiteMeal !== undefined;
+    esPromo || item.categoria === "Burgers" || item.categoria === "Combo";
+  const llevaPresentacion = !esPromo && item.precioWhiteMeal !== undefined;
   const llevaPapas = item.categoria === "Burgers";
   const llevaExtras = llevaProteina;
 
@@ -133,7 +136,7 @@ export function ProductSheet({
       )}
 
       {llevaProteina && (
-        <Grupo titulo="Proteína">
+        <Grupo titulo={esPromo ? "Proteína (para todas)" : "Proteína"}>
           {PROTEINAS.map((p) => (
             <Opcion
               key={p}
@@ -229,7 +232,11 @@ export function ProductSheet({
           type="text"
           value={nota}
           onChange={(e) => setNota(e.target.value)}
-          placeholder="ej: sin cebolla"
+          placeholder={
+            esPromo
+              ? "ej: una de carne y otra de pollo"
+              : "ej: sin cebolla"
+          }
           maxLength={120}
           className="w-full rounded-xl border border-bone-line bg-white/50 px-3 py-2.5 text-sm placeholder:text-bone-mute"
         />

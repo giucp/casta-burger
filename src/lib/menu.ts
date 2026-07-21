@@ -5,12 +5,19 @@
  * leen con `obtenerMenu()` de `menu-db.ts`. El dueño los edita desde /admin.
  */
 
-export type Categoria = "Burgers" | "Combo" | "Extras" | "Bebidas";
+export type Categoria =
+  | "Burgers"
+  | "Combo"
+  | "Extras"
+  | "Promos"
+  | "Bebidas";
 
+/** Orden en que se muestran las secciones del menú. */
 export const CATEGORIAS: Categoria[] = [
   "Burgers",
   "Combo",
   "Extras",
+  "Promos",
   "Bebidas",
 ];
 
@@ -23,6 +30,8 @@ export type MenuItem = {
   precio: number | null;
   /** Precio en USD de la versión White Meal, si el producto la tiene. */
   precioWhiteMeal?: number;
+  /** Solo en promos: lo que costaría comprando cada cosa suelta. */
+  precioSuelto?: number;
   categoria: Categoria;
   fotoUrl?: string;
   disponible: boolean;

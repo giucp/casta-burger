@@ -9,6 +9,7 @@ type FilaMenu = {
   descripcion: string | null;
   precio: string | number | null;
   precio_white_meal: string | number | null;
+  precio_suelto: string | number | null;
   categoria: string;
   foto_url: string | null;
   disponible: boolean;
@@ -28,6 +29,7 @@ function aNumero(v: string | number | null): number | null {
 
 function aMenuItem(f: FilaMenu): MenuItem {
   const whiteMeal = aNumero(f.precio_white_meal);
+  const suelto = aNumero(f.precio_suelto);
   return {
     id: f.id,
     slug: f.slug,
@@ -35,6 +37,7 @@ function aMenuItem(f: FilaMenu): MenuItem {
     descripcion: f.descripcion ?? undefined,
     precio: aNumero(f.precio),
     precioWhiteMeal: whiteMeal ?? undefined,
+    precioSuelto: suelto ?? undefined,
     categoria: f.categoria as Categoria,
     fotoUrl: f.foto_url ?? undefined,
     disponible: f.disponible,
@@ -54,7 +57,7 @@ export async function obtenerMenu(): Promise<MenuItem[]> {
   const { data, error } = await supabase
     .from("menu_items")
     .select(
-      "id, slug, nombre, descripcion, precio, precio_white_meal, categoria, foto_url, disponible, orden, tags",
+      "id, slug, nombre, descripcion, precio, precio_white_meal, precio_suelto, categoria, foto_url, disponible, orden, tags",
     )
     .order("categoria")
     .order("orden");

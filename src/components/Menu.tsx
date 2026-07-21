@@ -52,6 +52,7 @@ export function Menu({
   const burgers = porCategoria(items, "Burgers");
   const combos = porCategoria(items, "Combo");
   const extras = porCategoria(items, "Extras");
+  const promos = porCategoria(items, "Promos");
   const bebidas = porCategoria(items, "Bebidas");
 
   if (items.length === 0) {
@@ -110,10 +111,14 @@ export function Menu({
           </>
         )}
 
-        <div className="mt-9.5" id="promos">
-          <SecHead titulo="Promos" nota="se piden por WhatsApp" />
-        </div>
-        <Promos />
+        {promos.length > 0 && (
+          <>
+            <div className="mt-9.5" id="promos">
+              <SecHead titulo="Promos" />
+            </div>
+            <Promos items={promos} puedePedir={puedePedir} />
+          </>
+        )}
 
         {bebidas.length > 0 && (
           <>
