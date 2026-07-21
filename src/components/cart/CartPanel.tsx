@@ -4,6 +4,7 @@ import { useState } from "react";
 import { describirOpciones, subtotalLinea } from "@/lib/cart";
 import { usd } from "@/lib/format";
 import { linkWhatsApp, mensajePedido, type TipoPedido } from "@/lib/whatsapp";
+import { crearPedido } from "@/lib/acciones/crear-pedido";
 import { useCart } from "./CartProvider";
 import { Sheet } from "./Sheet";
 
@@ -53,53 +54,102 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const [telefono, setTelefono] = useState("");
   const [direccion, setDireccion] = useState("");
   const [nota, setNota] = useState("");
-  const [enviado, setEnviado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
+  const [fallo, setFallo] = useState<string | null>(null);
   const [intentado, setIntentado] = useState(false);
+  /** Queda listo cuando el pedido ya está guardado en la base */
+  const [confirmado, setConfirmado] = useState<{
+    numero: number;
+    total: number;
+    enlace: string;
+  } | null>(null);
 
   const faltaNombre = !nombre.trim();
   const faltaTelefono = !telefono.trim();
   const faltaDireccion = tipo === "delivery" && !direccion.trim();
   const incompleto = faltaNombre || faltaTelefono || faltaDireccion;
 
-  const confirmar = () => {
+  const confirmar = async () => {
     setIntentado(true);
-    if (incompleto || lineas.length === 0) return;
+    setFallo(null);
+    if (incompleto || lineas.length === 0 || guardando) return;
 
+    const datos = {
+      nombre: nombre.trim(),
+      telefono: telefono.trim(),
+      tipo,
+      direccion: direccion.trim() || undefined,
+      nota: nota.trim() || undefined,
+    };
+
+    setGuardando(true);
+    const resultado = await crearPedido(
+      datos,
+      lineas.map((l) => ({
+        menuItemId: l.menuItemId,
+        cantidad: l.cantidad,
+        opciones: {
+          proteina: l.opciones.proteina,
+          presentacion: l.opciones.presentacion,
+          papas: l.opciones.papas,
+          // Solo los ids: los precios los pone el servidor
+          extras: l.opciones.extras.map((e) => e.id),
+        },
+        nota: l.nota,
+      })),
+    );
+    setGuardando(false);
+
+    if (!resultado.ok) {
+      setFallo(resultado.error);
+      return;
+    }
+
+    // El total del mensaje es el del servidor, no el del navegador
     const mensaje = mensajePedido(
       lineas,
-      {
-        nombre: nombre.trim(),
-        telefono: telefono.trim(),
-        tipo,
-        direccion: direccion.trim() || undefined,
-        nota: nota.trim() || undefined,
-      },
-      subtotal,
+      datos,
+      resultado.total,
+      resultado.numero,
     );
 
-    // TODO(fase 1, paso 6): antes de abrir WhatsApp, guardar el pedido en
-    // Supabase (estado 'nuevo') y disparar el aviso a Telegram.
-    window.open(linkWhatsApp(mensaje), "_blank", "noopener,noreferrer");
-
+    setConfirmado({
+      numero: resultado.numero,
+      total: resultado.total,
+      enlace: linkWhatsApp(mensaje),
+    });
     vaciar();
-    setEnviado(true);
   };
 
-  if (enviado) {
+  if (confirmado) {
     return (
-      <Sheet titulo="Pedido enviado" onClose={onClose}>
-        <div className="py-6 text-center">
-          <p className="mb-3 font-display text-3xl uppercase leading-tight">
-            ¡Listo!
+      <Sheet titulo={`Pedido #${confirmado.numero}`} onClose={onClose}>
+        <div className="py-4 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-bone-mute">
+            Tu número de pedido
           </p>
-          <p className="text-sm text-bone-soft">
-            Se abrió WhatsApp con el resumen de tu pedido.
-            <br />
-            Termina de coordinar el pago por ahí.
+          <p className="my-1 font-display text-6xl leading-none">
+            #{confirmado.numero}
           </p>
-          <p className="mt-4 font-mono text-[11px] uppercase tracking-[0.08em] text-bone-mute">
-            Si no se abrió, revisá que el navegador no haya bloqueado la ventana
+          <p className="mb-5 font-mono text-sm font-bold">
+            {usd(confirmado.total)}
           </p>
+
+          <p className="mb-5 text-sm text-bone-soft">
+            Ya lo recibimos en la cocina. Falta cerrar el pago por WhatsApp.
+          </p>
+
+          {/* El enlace se abre con un toque aparte a propósito: si se abriera
+              solo al terminar de guardar, el navegador lo bloquearía por venir
+              de una espera y no de un gesto del visitante. */}
+          <a
+            href={confirmado.enlace}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-full items-center justify-center rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep"
+          >
+            Abrir WhatsApp
+          </a>
         </div>
       </Sheet>
     );
@@ -126,15 +176,21 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
               Completá los datos marcados
             </p>
           )}
+          {fallo && (
+            <p className="mb-2 font-mono text-[11px] text-casta">{fallo}</p>
+          )}
           <button
             type="button"
             onClick={confirmar}
-            className="flex w-full items-center justify-center gap-3 rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep"
+            disabled={guardando}
+            className="flex w-full items-center justify-center gap-3 rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep disabled:opacity-60"
           >
-            Confirmar por WhatsApp
-            <span className="font-mono text-base font-bold">
-              {usd(subtotal)}
-            </span>
+            {guardando ? "Enviando…" : "Confirmar pedido"}
+            {!guardando && (
+              <span className="font-mono text-base font-bold">
+                {usd(subtotal)}
+              </span>
+            )}
           </button>
         </>
       }

@@ -59,7 +59,7 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Migración corrida en Supabase
 - [x] Menú leído desde la base (`menu_items`)
 - [ ] CRUD del menú desde `/admin`
-- [ ] Guardar el pedido al confirmar, y el N° de pedido en el mensaje
+- [x] Guardar el pedido al confirmar, con N° de pedido y total calculados en el servidor
 - [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
 - [ ] Aviso por Telegram
 - [x] Deploy en Vercel
@@ -89,12 +89,7 @@ comportamiento del §5 del brief: fuera de horario los botones "Agregar" se
 deshabilitan y la barra inferior avisa cuándo abrimos. El sello Abierto/Cerrado
 dice la verdad siempre, en los dos modos.
 
-**2. Cerrar el alta pública de pedidos.** Hoy `orders` acepta inserts del
-público con `check (true)`, así que se podría crear un pedido con un total que
-no corresponde a los precios reales. Lo correcto es mover la creación del
-pedido a una Edge Function que calcule el total del lado del servidor.
-
-**3. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
+**2. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
 proyecto de Supabase, Vercel y dominio.
 
 ## Decisiones tomadas

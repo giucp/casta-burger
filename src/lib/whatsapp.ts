@@ -17,17 +17,19 @@ export type DatosCliente = {
 /**
  * Resumen del pedido para mandar por WhatsApp, donde se cierra el pago (§5).
  *
- * TODO(fase 1, paso 6): anteponer el N° de pedido que devuelva Supabase.
- * Hoy el mensaje sale sin número porque todavía no se guarda en la base.
+ * El N° y el total son los que devolvió el servidor al guardar el pedido, no
+ * los que calculó el navegador: así el mensaje dice exactamente lo mismo que
+ * ve el dueño en la pantalla de cocina.
  */
 export function mensajePedido(
   lineas: LineaCarrito[],
   datos: DatosCliente,
   subtotal: number,
+  numero: number,
 ): string {
   const l: string[] = [];
 
-  l.push(`*Nuevo pedido — ${BUSINESS.nombre}*`);
+  l.push(`*Pedido #${numero} — ${BUSINESS.nombre}*`);
   l.push("");
 
   for (const linea of lineas) {
@@ -56,6 +58,9 @@ export function mensajePedido(
     l.push("");
     l.push("_(Falta acordar el costo de envío)_");
   }
+
+  l.push("");
+  l.push("_Pedido ya registrado en el sistema._");
 
   return l.join("\n");
 }
