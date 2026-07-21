@@ -3,6 +3,8 @@
 Web pública y sistema de pedidos para **Casta Burger** (Alto Barinas, Barinas, Venezuela).
 Una sola app con dos caras: la web del cliente y `/admin` con la pantalla de cocina en vivo.
 
+**En vivo:** https://casta-burger.vercel.app
+
 El documento maestro es [`docs/casta_burger_brief.md`](docs/casta_burger_brief.md).
 El diseño aprobado es [`docs/casta_diseno.html`](docs/casta_diseno.html) — es la fuente de verdad visual.
 
@@ -14,9 +16,30 @@ Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Postgres + Aut
 
 ```bash
 npm install
-cp .env.example .env.local   # rellenar
+cp .env.example .env.local   # rellenar con las llaves de Supabase
 npm run dev
 ```
+
+## Base de datos
+
+El proyecto de Supabase vive en una cuenta aparte de la personal del
+desarrollador. Las migraciones están en [`supabase/migrations/`](supabase/migrations)
+y se corren pegándolas en el SQL Editor, en orden:
+
+| Migración | Qué hace |
+|---|---|
+| `0001_esquema_inicial.sql` | Tablas, vistas de finanzas, RLS y Realtime |
+| `0002_menu_real.sql` | Columnas `tags` y `slug`, y carga los 13 productos |
+
+Ambas son seguras de correr de nuevo: la 0002 usa `on conflict (slug) do update`,
+así que recargarla actualiza los productos en vez de duplicarlos.
+
+## Desplegar
+
+Import normal de Vercel desde GitHub. Lo único que hay que configurar son las
+variables de entorno de [`.env.example`](.env.example). Después del primer
+deploy hay que agregar la URL de Vercel en Supabase → Authentication → URL
+Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 
 ## Estado
 
@@ -39,7 +62,7 @@ npm run dev
 - [ ] Guardar el pedido al confirmar, y el N° de pedido en el mensaje
 - [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
 - [ ] Aviso por Telegram
-- [ ] Deploy en Vercel
+- [x] Deploy en Vercel
 
 ## Pendientes conocidos
 
@@ -53,7 +76,10 @@ npm run dev
 - **El carrito no sobrevive al refresco** de la página (vive en memoria). Si se
   quiere que aguante, va a `localStorage`.
 
-## Antes de salir a producción
+## Antes de que el negocio dependa de esto
+
+La web ya está publicada, pero **todavía no está lista para operar de verdad**.
+Falta lo de arriba sin marcar, y además:
 
 **1. Poner `MODO_DEMO = false`** en [`src/lib/config.ts`](src/lib/config.ts).
 
@@ -68,8 +94,11 @@ público con `check (true)`, así que se podría crear un pedido con un total qu
 no corresponde a los precios reales. Lo correcto es mover la creación del
 pedido a una Edge Function que calcule el total del lado del servidor.
 
-**3. Agregar el dominio de producción** a Authentication → URL Configuration en
-Supabase, o el magic link va a seguir apuntando a localhost.
+**3. Pasar Vercel a plan Pro.** El plan gratis prohíbe el uso comercial (§1 del
+brief). Para probar alcanza; para tomar pedidos de un negocio real, no.
+
+**4. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
+proyecto de Supabase, Vercel y dominio.
 
 ## Entrega
 
