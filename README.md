@@ -29,12 +29,13 @@ npm run dev
 - [x] Precios reales del menú impreso, con las dos presentaciones (Sola / White Meal)
 - [x] Carrito + selector de proteína, presentación, papás y extras
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
+- [x] Pantalla de cocina: tarjetas por estado, filtros, sonido — **con datos de ejemplo**
 - [x] Back-office `/admin`: Números (ganancia neta), Inventario, Compras — **con
       datos de ejemplo**, sin base de datos y sin login
 - [ ] Supabase: schema, menú en base de datos, guardar el pedido
 - [ ] N° de pedido (sale de Supabase; hoy el mensaje va sin número)
 - [ ] Auth del dueño (magic link) + `/admin`
-- [ ] Pantalla de cocina en vivo (Realtime) + sonido
+- [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
 - [ ] Aviso por Telegram
 - [ ] Deploy en Vercel
 

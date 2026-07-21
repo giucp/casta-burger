@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// La pantalla de cocina entra en el paso 7, cuando haya Supabase Realtime:
-// sin datos en vivo no es una pantalla de cocina, es una foto.
 const SECCIONES = [
+  { href: "/admin/cocina", label: "Cocina" },
   { href: "/admin", label: "Números" },
   { href: "/admin/inventario", label: "Inventario" },
   { href: "/admin/compras", label: "Compras" },
