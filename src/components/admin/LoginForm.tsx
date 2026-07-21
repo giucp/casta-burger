@@ -4,24 +4,41 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+/** Qué salió mal al volver del correo, en cristiano. */
+const MOTIVOS: Record<string, string> = {
+  "sin-codigo":
+    "El enlace llegó sin datos de acceso. Pedí uno nuevo y abrilo tocándolo, sin copiarlo a mano.",
+  "enlace-invalido":
+    "El enlace ya se usó o venció. Los enlaces duran un rato corto: pedí uno nuevo.",
+};
+
 export function LoginForm() {
   const params = useSearchParams();
   const volver = params.get("volver") ?? "/admin/cocina";
+  const motivo = params.get("error");
 
   const [correo, setCorreo] = useState("");
   const [estado, setEstado] = useState<"idle" | "enviando" | "enviado">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    motivo ? (MOTIVOS[motivo] ?? "No se pudo entrar con ese enlace.") : null,
+  );
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setEstado("enviando");
 
+    // A dónde volver va en una cookie corta, no en la URL de retorno.
+    // Supabase compara la URL de retorno contra su lista de permitidas, y un
+    // query string variable hace ese emparejamiento frágil: si no coincide,
+    // manda al visitante a la Site URL sin avisar de nada.
+    document.cookie = `casta_volver=${encodeURIComponent(volver)}; Path=/; Max-Age=900; SameSite=Lax`;
+
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email: correo.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/admin/auth/callback?volver=${encodeURIComponent(volver)}`,
+        emailRedirectTo: `${window.location.origin}/admin/auth/callback`,
       },
     });
 
