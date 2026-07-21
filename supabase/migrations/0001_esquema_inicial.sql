@@ -123,8 +123,16 @@ insert into settings (id, whatsapp) values (1, '584227105981')
 
 -- ============================================================
 --  6) VISTAS DE FINANZAS
+--
+--  ⚠️ `security_invoker = true` NO es opcional.
+--  Una vista de Postgres corre con los permisos de quien la creó (postgres),
+--  así que por defecto SE SALTA el RLS de las tablas que consulta. Sin esta
+--  opción, cualquiera con la llave pública podría leer resumen_diario y ver
+--  las ventas y la ganancia neta del negocio. Con ella, la vista respeta las
+--  políticas de orders y purchases: el público no ve nada, el dueño ve todo.
 -- ============================================================
-create or replace view ventas_por_dia as
+create or replace view ventas_por_dia
+with (security_invoker = true) as
 select
   (created_at at time zone 'America/Caracas')::date as dia,
   count(*)               as pedidos,
@@ -133,14 +141,16 @@ from orders
 where estado <> 'cancelado'
 group by 1;
 
-create or replace view compras_por_dia as
+create or replace view compras_por_dia
+with (security_invoker = true) as
 select fecha as dia,
        count(*)               as compras_cant,
        coalesce(sum(monto),0) as compras_monto
 from purchases
 group by 1;
 
-create or replace view resumen_diario as
+create or replace view resumen_diario
+with (security_invoker = true) as
 select
   coalesce(v.dia, c.dia)      as dia,
   coalesce(v.pedidos,0)       as pedidos,
