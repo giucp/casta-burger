@@ -81,13 +81,24 @@ export async function crearPedido(
   const porId = new Map(productos.map((p) => [p.id, p]));
   const num = (v: unknown) => (v === null ? null : Number(v));
 
+  /**
+   * Los extras se guardan con su nombre y precio, no con el id: la pantalla
+   * de cocina tiene que leer "Tocineta adicional", no un UUID. Y como es una
+   * copia, el pedido viejo sigue siendo legible aunque el extra se renombre o
+   * se borre del menú — la misma razón por la que se copian nombre y precio.
+   */
+  type OpcionesGuardadas = {
+    proteina?: Proteina;
+    extras: { id: string; nombre: string; precio: number }[];
+  };
+
   const items: {
     menu_item_id: string;
     nombre: string;
     precio: number;
     cantidad: number;
     subtotal: number;
-    opciones: LineaEntrada["opciones"];
+    opciones: OpcionesGuardadas;
     nota: string | null;
   }[] = [];
 
@@ -102,12 +113,18 @@ export async function crearPedido(
       return { ok: false, error: `${producto.nombre} no tiene precio.` };
 
     let unitario = base;
+    const extrasResueltos: OpcionesGuardadas["extras"] = [];
 
     for (const extraId of linea.opciones.extras) {
       const extra = porId.get(extraId);
       if (!extra) return { ok: false, error: "Un extra ya no existe." };
-      const precioExtra = num(extra.precio);
-      if (precioExtra !== null) unitario += precioExtra;
+      const precioExtra = num(extra.precio) ?? 0;
+      unitario += precioExtra;
+      extrasResueltos.push({
+        id: extra.id,
+        nombre: extra.nombre,
+        precio: precioExtra,
+      });
     }
 
     unitario = Math.round(unitario * 100) / 100;
@@ -118,7 +135,7 @@ export async function crearPedido(
       precio: unitario,
       cantidad: linea.cantidad,
       subtotal: Math.round(unitario * linea.cantidad * 100) / 100,
-      opciones: linea.opciones,
+      opciones: { proteina: linea.opciones.proteina, extras: extrasResueltos },
       nota: linea.nota?.trim() || null,
     });
   }

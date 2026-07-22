@@ -1,15 +1,11 @@
 import { Cocina } from "@/components/admin/Cocina";
-import { lineasDemo, pedidosDemo } from "@/lib/admin/pedidos";
+import { listarPedidos } from "@/lib/acciones/cocina";
 
 export const metadata = { title: "Cocina — Casta Admin" };
 
-/** Los pedidos de ejemplo son relativos a ahora, así que no se puede prerenderizar. */
+/** Los pedidos cambian todo el tiempo: nunca se sirve una versión guardada. */
 export const dynamic = "force-dynamic";
 
-export default function CocinaPage() {
-  const ahoraISO = new Date().toISOString();
-
-  return (
-    <Cocina inicial={pedidosDemo(ahoraISO)} lineas={lineasDemo()} />
-  );
+export default async function CocinaPage() {
+  return <Cocina inicial={await listarPedidos()} />;
 }
