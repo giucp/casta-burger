@@ -26,10 +26,8 @@ export type MenuItem = {
   slug: string;
   nombre: string;
   descripcion?: string;
-  /** Precio en USD de la versión sola. `null` = todavía sin precio definido. */
+  /** Precio en USD. `null` = todavía sin precio definido. */
   precio: number | null;
-  /** Precio en USD de la versión White Meal, si el producto la tiene. */
-  precioWhiteMeal?: number;
   /** Solo en promos: lo que costaría comprando cada cosa suelta. */
   precioSuelto?: number;
   categoria: Categoria;
@@ -39,28 +37,20 @@ export type MenuItem = {
   tags: string[];
 };
 
-/** Proteína a elegir en todas las burgers. */
+/** Proteína a elegir en las burgers. Las promos vienen siempre con carne. */
 export const PROTEINAS = ["Carne", "Cordero", "Pollo"] as const;
 export type Proteina = (typeof PROTEINAS)[number];
 
 /**
- * Las burgers vienen en dos presentaciones, tal cual el menú impreso.
- * El cliente elige una al agregar, igual que elige la proteína.
+ * Qué se puede elegir al pedir cada categoría.
+ *
+ * Las promos van cerradas a propósito: precio fijo, carne, y sin agregados.
+ * Si se les pudiera cambiar algo habría que recalcular el descuento.
  */
-export const PRESENTACIONES = {
-  only: { etiqueta: "Sola", detalle: "solo la hamburguesa" },
-  whiteMeal: {
-    etiqueta: "White Meal",
-    detalle: "con papas + Coca-Cola de lata",
-  },
-} as const;
-export type Presentacion = keyof typeof PRESENTACIONES;
-
-/** Adicional de papás, aplica por hamburguesa. */
-export const PAPAS_ADICIONAL = {
-  etiqueta: "150 g de papás full sal y paprika",
-  precio: 2.5,
-};
+export function opcionesDe(categoria: Categoria) {
+  const esBurger = categoria === "Burgers" || categoria === "Combo";
+  return { proteina: esBurger, extras: esBurger };
+}
 
 /** Items de una categoría, ya ordenados como se muestran en el menú. */
 export function porCategoria(

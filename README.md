@@ -66,11 +66,13 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 
 ## Pendientes conocidos
 
-- **Bebidas sin precio**: el menú impreso no los trae. Se muestran como "Consultar"
-  hasta que el negocio los confirme.
+- **Nevada manzana**: sigue en el menú impreso pero no está en la lista de
+  bebidas actuales ni tiene precio. Está oculta (`disponible = false`); volver
+  a mostrarla es un toggle.
+- **"3 Cheese Burger" estaba duplicado** como Combo y como Promo, al mismo
+  precio. Quedó solo en Promos, que además muestra el ahorro. El Combo está
+  oculto, no borrado.
 - **Fotos de producto**: hoy son placeholders monolínea.
-- **Los dos CTA del hero hacen lo mismo** (bajan al menú). "Pedir ahora" debe
-  abrir el flujo de pedido cuando exista el carrito.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
   se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
 - **El carrito no sobrevive al refresco** de la página (vive en memoria). Si se

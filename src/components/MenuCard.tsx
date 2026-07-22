@@ -1,7 +1,6 @@
 "use client";
 
-import { PRESENTACIONES, type MenuItem } from "@/lib/menu";
-import { usd } from "@/lib/format";
+import type { MenuItem } from "@/lib/menu";
 import { useCartUI } from "./cart/CartUI";
 import { BurgerGlyph } from "./icons";
 import { Precio } from "./Precio";
@@ -46,15 +45,6 @@ export function MenuCard({
           </p>
         )}
 
-        {/* La versión White Meal va en su propia línea: metida en el bloque de
-            precio ensancha la columna y parte el nombre en dos en móvil. */}
-        {item.precioWhiteMeal !== undefined && (
-          <p className="mb-2.5 font-mono text-[11px] uppercase tracking-[0.06em] text-bone-mute">
-            {PRESENTACIONES.whiteMeal.etiqueta}{" "}
-            <b className="text-bone-ink">{usd(item.precioWhiteMeal)}</b>
-          </p>
-        )}
-
         {item.tags && item.tags.length > 0 && (
           <ul className="mb-3 flex flex-wrap gap-1.5">
             {item.tags.map((tag) => (
@@ -73,8 +63,6 @@ export function MenuCard({
           </ul>
         )}
 
-        {/* TODO(fase 1, paso 5): abre el selector de proteína + presentación
-            (Sola / White Meal) + extras, y agrega al carrito. */}
         <button
           type="button"
           disabled={deshabilitado}

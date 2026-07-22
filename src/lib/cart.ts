@@ -1,4 +1,4 @@
-import type { MenuItem, Presentacion, Proteina } from "./menu";
+import type { MenuItem, Proteina } from "./menu";
 
 /** Un extra ya elegido: viaja con su nombre y precio. */
 export type ExtraElegido = {
@@ -11,20 +11,16 @@ export type ExtraElegido = {
 /**
  * Opciones elegidas para una línea del pedido.
  *
- * Calca el `opciones jsonb` del §4 del brief: es lo que se va a guardar en
+ * Calca el `opciones jsonb` del §4 del brief: es lo que se guarda en
  * `order_items.opciones`.
  *
  * Los extras guardan nombre y precio, no solo el id. Así el carrito no
- * necesita consultar el menú para mostrar ni para sumar — y de paso la línea
- * queda con el precio que se le cobró al cliente, aunque el menú cambie
- * después, que es la misma razón por la que `order_items` guarda copia del
- * nombre y el precio.
+ * necesita consultar el menú para mostrar ni para sumar, y la línea conserva
+ * el precio que se le cobró al cliente aunque el menú cambie después —la
+ * misma razón por la que `order_items` guarda copia del nombre y el precio.
  */
 export type OpcionesLinea = {
   proteina?: Proteina;
-  presentacion?: Presentacion;
-  /** Adicional de 150 g de papás */
-  papas?: boolean;
   extras: ExtraElegido[];
 };
 
@@ -33,35 +29,27 @@ export type LineaCarrito = {
   key: string;
   menuItemId: string;
   nombre: string;
-  /** Precio de UNA unidad ya con presentación, papás y extras incluidos */
+  /** Precio de UNA unidad, ya con los extras incluidos */
   precioUnitario: number;
   cantidad: number;
   opciones: OpcionesLinea;
   nota?: string;
 };
 
-export const PAPAS_PRECIO = 2.5;
-
-/** Precio de una unidad: base según presentación, más papás, más extras. */
+/** Precio de una unidad: el del producto más los extras elegidos. */
 export function precioUnitario(
   item: MenuItem,
   opciones: OpcionesLinea,
 ): number {
-  const base =
-    opciones.presentacion === "whiteMeal" && item.precioWhiteMeal !== undefined
-      ? item.precioWhiteMeal
-      : (item.precio ?? 0);
-
-  const papas = opciones.papas ? PAPAS_PRECIO : 0;
+  const base = item.precio ?? 0;
   const extras = opciones.extras.reduce((suma, e) => suma + e.precio, 0);
-
-  return base + papas + extras;
+  return Math.round((base + extras) * 100) / 100;
 }
 
 /**
- * Clave de la línea. Dos "Casta Burger" con la misma proteína, presentación,
- * papás, extras y nota se apilan en una sola línea con cantidad 2; si cambia
- * cualquier opción, van separadas.
+ * Clave de la línea. Dos "Casta Burger" con la misma proteína, extras y nota
+ * se apilan en una sola línea con cantidad 2; si cambia cualquier opción, van
+ * separadas.
  */
 export function claveLinea(
   menuItemId: string,
@@ -71,8 +59,6 @@ export function claveLinea(
   return [
     menuItemId,
     opciones.proteina ?? "-",
-    opciones.presentacion ?? "-",
-    opciones.papas ? "papas" : "-",
     opciones.extras
       .map((e) => e.id)
       .sort()
@@ -82,11 +68,11 @@ export function claveLinea(
 }
 
 export function subtotalLinea(linea: LineaCarrito): number {
-  return linea.precioUnitario * linea.cantidad;
+  return Math.round(linea.precioUnitario * linea.cantidad * 100) / 100;
 }
 
 export function subtotalCarrito(lineas: LineaCarrito[]): number {
-  return lineas.reduce((suma, l) => suma + subtotalLinea(l), 0);
+  return Math.round(lineas.reduce((s, l) => s + subtotalLinea(l), 0) * 100) / 100;
 }
 
 export function cantidadTotal(lineas: LineaCarrito[]): number {
@@ -96,11 +82,7 @@ export function cantidadTotal(lineas: LineaCarrito[]): number {
 /** Texto legible de las opciones, para la tarjeta del carrito y el WhatsApp. */
 export function describirOpciones(opciones: OpcionesLinea): string[] {
   const partes: string[] = [];
-
   if (opciones.proteina) partes.push(opciones.proteina);
-  if (opciones.presentacion === "whiteMeal") partes.push("White Meal");
-  if (opciones.papas) partes.push("con papás");
   for (const extra of opciones.extras) partes.push(extra.nombre);
-
   return partes;
 }

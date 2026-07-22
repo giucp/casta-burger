@@ -1,8 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PAPAS_PRECIO } from "@/lib/cart";
-import type { Presentacion, Proteina } from "@/lib/menu";
+import type { Proteina } from "@/lib/menu";
 
 /**
  * Lo que manda el navegador: QUÉ eligió el cliente, nunca CUÁNTO cuesta.
@@ -16,8 +15,6 @@ export type LineaEntrada = {
   cantidad: number;
   opciones: {
     proteina?: Proteina;
-    presentacion?: Presentacion;
-    papas?: boolean;
     /** ids de `menu_items` de la categoría Extras */
     extras: string[];
   };
@@ -75,7 +72,7 @@ export async function crearPedido(
 
   const { data: productos, error: errorMenu } = await supabase
     .from("menu_items")
-    .select("id, nombre, precio, precio_white_meal, disponible")
+    .select("id, nombre, precio, disponible")
     .in("id", ids);
 
   if (errorMenu || !productos)
@@ -101,16 +98,10 @@ export async function crearPedido(
       return { ok: false, error: `${producto.nombre} se agotó.` };
 
     const base = num(producto.precio);
-    const whiteMeal = num(producto.precio_white_meal);
     if (base === null)
       return { ok: false, error: `${producto.nombre} no tiene precio.` };
 
-    let unitario =
-      linea.opciones.presentacion === "whiteMeal" && whiteMeal !== null
-        ? whiteMeal
-        : base;
-
-    if (linea.opciones.papas) unitario += PAPAS_PRECIO;
+    let unitario = base;
 
     for (const extraId of linea.opciones.extras) {
       const extra = porId.get(extraId);

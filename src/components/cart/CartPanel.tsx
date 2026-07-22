@@ -90,8 +90,6 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
         cantidad: l.cantidad,
         opciones: {
           proteina: l.opciones.proteina,
-          presentacion: l.opciones.presentacion,
-          papas: l.opciones.papas,
           // Solo los ids: los precios los pone el servidor
           extras: l.opciones.extras.map((e) => e.id),
         },

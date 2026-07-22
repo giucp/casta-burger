@@ -2,20 +2,12 @@
 
 import { useState } from "react";
 import {
-  PAPAS_PRECIO,
   precioUnitario,
   type ExtraElegido,
   type OpcionesLinea,
 } from "@/lib/cart";
 import { usd } from "@/lib/format";
-import {
-  PAPAS_ADICIONAL,
-  PRESENTACIONES,
-  PROTEINAS,
-  type MenuItem,
-  type Presentacion,
-  type Proteina,
-} from "@/lib/menu";
+import { opcionesDe, PROTEINAS, type MenuItem, type Proteina } from "@/lib/menu";
 import { useCart } from "./CartProvider";
 import { Sheet } from "./Sheet";
 
@@ -74,32 +66,20 @@ export function ProductSheet({
   onClose: () => void;
 }) {
   const { agregar } = useCart();
-
-  // Una promo tiene precio cerrado: no se le elige presentación ni papás,
-  // pero sí la proteína de las burgers que la componen y extras aparte.
+  const permite = opcionesDe(item.categoria);
   const esPromo = item.categoria === "Promos";
-  const llevaProteina =
-    esPromo || item.categoria === "Burgers" || item.categoria === "Combo";
-  const llevaPresentacion = !esPromo && item.precioWhiteMeal !== undefined;
-  const llevaPapas = item.categoria === "Burgers";
-  const llevaExtras = llevaProteina;
 
   const [proteina, setProteina] = useState<Proteina>(PROTEINAS[0]);
-  const [presentacion, setPresentacion] = useState<Presentacion>("only");
-  const [papas, setPapas] = useState(false);
   const [extras, setExtras] = useState<ExtraElegido[]>([]);
   const [cantidad, setCantidad] = useState(1);
   const [nota, setNota] = useState("");
 
   const opciones: OpcionesLinea = {
-    proteina: llevaProteina ? proteina : undefined,
-    presentacion: llevaPresentacion ? presentacion : undefined,
-    papas: llevaPapas ? papas : undefined,
+    proteina: permite.proteina ? proteina : undefined,
     extras,
   };
 
-  const unitario = precioUnitario(item, opciones);
-  const total = unitario * cantidad;
+  const total = precioUnitario(item, opciones) * cantidad;
 
   const alternarExtra = (extra: MenuItem) =>
     setExtras((actuales) =>
@@ -135,8 +115,14 @@ export function ProductSheet({
         <p className="mb-5 text-[13.5px] text-bone-soft">{item.descripcion}</p>
       )}
 
-      {llevaProteina && (
-        <Grupo titulo={esPromo ? "Proteína (para todas)" : "Proteína"}>
+      {esPromo && (
+        <p className="mb-5 rounded-xl border border-bone-line px-3 py-2.5 font-mono text-[11px] uppercase tracking-[0.06em] text-bone-mute">
+          La promo va tal cual: con carne y sin cambios
+        </p>
+      )}
+
+      {permite.proteina && (
+        <Grupo titulo="Proteína">
           {PROTEINAS.map((p) => (
             <Opcion
               key={p}
@@ -149,38 +135,8 @@ export function ProductSheet({
         </Grupo>
       )}
 
-      {llevaPresentacion && (
-        <Grupo titulo="Presentación">
-          <Opcion
-            activa={presentacion === "only"}
-            onClick={() => setPresentacion("only")}
-          >
-            {PRESENTACIONES.only.etiqueta} · {usd(item.precio ?? 0)}
-          </Opcion>
-          <Opcion
-            activa={presentacion === "whiteMeal"}
-            onClick={() => setPresentacion("whiteMeal")}
-          >
-            {PRESENTACIONES.whiteMeal.etiqueta} ·{" "}
-            {usd(item.precioWhiteMeal ?? 0)}
-          </Opcion>
-          <p className="w-full font-mono text-[11px] text-bone-mute">
-            {PRESENTACIONES.whiteMeal.etiqueta} ={" "}
-            {PRESENTACIONES.whiteMeal.detalle}
-          </p>
-        </Grupo>
-      )}
-
-      {llevaPapas && (
-        <Grupo titulo="Papás">
-          <Opcion activa={papas} onClick={() => setPapas(!papas)}>
-            {PAPAS_ADICIONAL.etiqueta} · +{usd(PAPAS_PRECIO)}
-          </Opcion>
-        </Grupo>
-      )}
-
-      {llevaExtras && (
-        <Grupo titulo="Extras">
+      {permite.extras && catalogoExtras.length > 0 && (
+        <Grupo titulo="Agregale algo">
           {catalogoExtras.map((extra) => (
             <Opcion
               key={extra.id}
@@ -232,11 +188,7 @@ export function ProductSheet({
           type="text"
           value={nota}
           onChange={(e) => setNota(e.target.value)}
-          placeholder={
-            esPromo
-              ? "ej: una de carne y otra de pollo"
-              : "ej: sin cebolla"
-          }
+          placeholder="ej: sin cebolla"
           maxLength={120}
           className="w-full rounded-xl border border-bone-line bg-white/50 px-3 py-2.5 text-sm placeholder:text-bone-mute"
         />

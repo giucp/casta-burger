@@ -1,13 +1,6 @@
-import {
-  PAPAS_ADICIONAL,
-  porCategoria,
-  PRESENTACIONES,
-  PROTEINAS,
-  type MenuItem,
-} from "@/lib/menu";
-import { usd } from "@/lib/format";
+import { porCategoria, PROTEINAS, type MenuItem } from "@/lib/menu";
+import { ListaPedible } from "./ListaPedible";
 import { MenuCard } from "./MenuCard";
-import { Precio } from "./Precio";
 import { Promos } from "./Promos";
 
 /** Encabezado de sección: título Anton + regla gruesa (§3). */
@@ -22,23 +15,6 @@ function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
       </div>
       <div className="mt-3.5 mb-6.5 h-[3px] bg-bone-ink" />
     </>
-  );
-}
-
-/** Lista simple a dos columnas — para Extras y Bebidas. */
-function ListaSimple({ items }: { items: MenuItem[] }) {
-  return (
-    <ul className="mt-2 grid gap-x-5 gap-y-2.5 sm:grid-cols-2">
-      {items.map((item) => (
-        <li
-          key={item.id}
-          className="flex items-baseline justify-between gap-3 border-b border-dotted border-bone-line py-2.5 text-sm"
-        >
-          <span>{item.nombre}</span>
-          <Precio monto={item.precio} />
-        </li>
-      ))}
-    </ul>
   );
 }
 
@@ -77,17 +53,9 @@ export function Menu({
               titulo="Burgers"
               nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
             />
-            <p className="-mt-3 mb-4 font-mono text-[11px] uppercase tracking-[0.08em] text-bone-mute">
-              {PRESENTACIONES.whiteMeal.etiqueta} ={" "}
-              {PRESENTACIONES.whiteMeal.detalle}
-            </p>
             {burgers.map((item) => (
               <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
             ))}
-            <p className="mt-4 font-mono text-[11px] text-bone-mute">
-              Nota: por {usd(PAPAS_ADICIONAL.precio)} adicional por hamburguesa,{" "}
-              {PAPAS_ADICIONAL.etiqueta}.
-            </p>
           </>
         )}
 
@@ -107,7 +75,7 @@ export function Menu({
             <div className="mt-9.5">
               <SecHead titulo="Extras" />
             </div>
-            <ListaSimple items={extras} />
+            <ListaPedible items={extras} puedePedir={puedePedir} />
           </>
         )}
 
@@ -125,7 +93,7 @@ export function Menu({
             <div className="mt-9.5">
               <SecHead titulo="Bebidas" />
             </div>
-            <ListaSimple items={bebidas} />
+            <ListaPedible items={bebidas} puedePedir={puedePedir} />
           </>
         )}
       </div>
