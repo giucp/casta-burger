@@ -29,10 +29,14 @@ y se corren pegándolas en el SQL Editor, en orden:
 | Migración | Qué hace |
 |---|---|
 | `0001_esquema_inicial.sql` | Tablas, vistas de finanzas, RLS y Realtime |
-| `0002_menu_real.sql` | Columnas `tags` y `slug`, y carga los 13 productos |
+| `0002_menu_real.sql` | Columnas `tags` y `slug`, y carga el menú |
+| `0003_promos.sql` | Categoría `Promos` y columna `precio_suelto` |
+| `0004_menu_actualizado.sql` | Menú de julio: sin White Meal, bebidas con precio |
+| `0005_quitar_nevada.sql` | Saca la Nevada de la carta |
 
-Ambas son seguras de correr de nuevo: la 0002 usa `on conflict (slug) do update`,
-así que recargarla actualiza los productos en vez de duplicarlos.
+Todas son seguras de correr de nuevo: las que cargan productos usan
+`on conflict (slug) do update`, así que recargarlas actualiza en vez de
+duplicar.
 
 ## Desplegar
 
@@ -66,9 +70,6 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 
 ## Pendientes conocidos
 
-- **Nevada manzana**: sigue en el menú impreso pero no está en la lista de
-  bebidas actuales ni tiene precio. Está oculta (`disponible = false`); volver
-  a mostrarla es un toggle.
 - **"3 Cheese Burger" estaba duplicado** como Combo y como Promo, al mismo
   precio. Quedó solo en Promos, que además muestra el ahorro. El Combo está
   oculto, no borrado.
