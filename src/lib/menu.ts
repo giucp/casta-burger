@@ -5,17 +5,11 @@
  * leen con `obtenerMenu()` de `menu-db.ts`. El dueño los edita desde /admin.
  */
 
-export type Categoria =
-  | "Burgers"
-  | "Combo"
-  | "Extras"
-  | "Promos"
-  | "Bebidas";
+export type Categoria = "Burgers" | "Extras" | "Promos" | "Bebidas";
 
 /** Orden en que se muestran las secciones del menú. */
 export const CATEGORIAS: Categoria[] = [
   "Burgers",
-  "Combo",
   "Extras",
   "Promos",
   "Bebidas",
@@ -48,7 +42,7 @@ export type Proteina = (typeof PROTEINAS)[number];
  * Si se les pudiera cambiar algo habría que recalcular el descuento.
  */
 export function opcionesDe(categoria: Categoria) {
-  const esBurger = categoria === "Burgers" || categoria === "Combo";
+  const esBurger = categoria === "Burgers";
   return { proteina: esBurger, extras: esBurger };
 }
 

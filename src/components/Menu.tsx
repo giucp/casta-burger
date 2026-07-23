@@ -26,7 +26,6 @@ export function Menu({
   puedePedir: boolean;
 }) {
   const burgers = porCategoria(items, "Burgers");
-  const combos = porCategoria(items, "Combo");
   const extras = porCategoria(items, "Extras");
   const promos = porCategoria(items, "Promos");
   const bebidas = porCategoria(items, "Bebidas");
@@ -54,17 +53,6 @@ export function Menu({
               nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
             />
             {burgers.map((item) => (
-              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
-            ))}
-          </>
-        )}
-
-        {combos.length > 0 && (
-          <>
-            <div className="mt-9.5">
-              <SecHead titulo="Combo" />
-            </div>
-            {combos.map((item) => (
               <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
             ))}
           </>

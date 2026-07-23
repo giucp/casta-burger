@@ -33,6 +33,10 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0003_promos.sql` | Categoría `Promos` y columna `precio_suelto` |
 | `0004_menu_actualizado.sql` | Menú de julio: sin White Meal, bebidas con precio |
 | `0005_quitar_nevada.sql` | Saca la Nevada de la carta |
+| `0006_verificar_realtime.sql` | Asegura Realtime en los pedidos |
+| `0007_menu_item_borrable.sql` | Borrar un producto no rompe el histórico |
+| `0008_menu_agotado_visible.sql` | El público ve lo agotado, atenuado |
+| `0009_quitar_combo.sql` | Fuera la categoría Combo (era la promo 3 Cheese) |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -68,8 +72,10 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
       WhatsApp y el pedido lleva el enlace de Maps
 - [x] El carrito sobrevive al refresco (localStorage)
 - [x] Deploy en Vercel
-- [ ] Aviso por Telegram (respaldo del sonido cuando el teléfono está bloqueado)
-- [ ] CRUD del menú desde `/admin`
+- [x] CRUD del menú desde `/admin`: agotar/prender, editar precio y nombre, agregar y borrar
+- [x] Aviso por Telegram al entrar un pedido (activable con el token del bot)
+- [x] La web recuerda los datos del cliente en su teléfono (sin cuenta)
+- [x] Delivery con ubicación GPS compartida como en WhatsApp
 
 ## Pendientes conocidos
 

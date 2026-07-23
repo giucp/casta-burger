@@ -24,15 +24,25 @@ export function ListaPedible({
     <ul className="mt-2 grid gap-x-5 gap-y-1 sm:grid-cols-2">
       {items.map((item) => {
         const sinPrecio = item.precio === null;
-        const deshabilitado = sinPrecio || !puedePedir;
+        const agotado = !item.disponible;
+        const deshabilitado = sinPrecio || agotado || !puedePedir;
 
         return (
           <li
             key={item.id}
-            className="flex items-center gap-3 border-b border-dotted border-bone-line py-2"
+            className={`flex items-center gap-3 border-b border-dotted border-bone-line py-2 ${
+              agotado ? "opacity-50" : ""
+            }`}
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm">{item.nombre}</p>
+              <p className="text-sm">
+                {item.nombre}
+                {agotado && (
+                  <span className="ml-2 font-mono text-[10px] uppercase tracking-[0.08em] text-bone-mute">
+                    agotado
+                  </span>
+                )}
+              </p>
               {item.descripcion && (
                 <p className="text-[12px] text-bone-soft">
                   {item.descripcion}

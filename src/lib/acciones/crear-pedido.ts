@@ -1,6 +1,8 @@
 "use server";
 
+import { waitUntil } from "@vercel/functions";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { avisarPedidoTelegram } from "@/lib/telegram";
 import type { Proteina } from "@/lib/menu";
 
 /**
@@ -209,6 +211,27 @@ export async function crearPedido(
     await supabase.from("orders").delete().eq("id", pedido.id);
     return { ok: false, error: "No pudimos guardar el detalle del pedido." };
   }
+
+  // Aviso a la cocina por Telegram, en segundo plano: el cliente no espera a
+  // que Telegram responda, y si falla el pedido igual quedó guardado.
+  waitUntil(
+    avisarPedidoTelegram({
+      numero: pedido.numero,
+      tipo: datos.tipo,
+      total: `$${subtotal.toFixed(2)}`,
+      cliente: datos.nombre.trim(),
+      telefono: datos.telefono.trim(),
+      direccion: direccionFinal,
+      lineas: items.map((i) => ({
+        cantidad: i.cantidad,
+        nombre: i.nombre,
+        opciones: [
+          i.opciones.proteina,
+          ...i.opciones.extras.map((e) => e.nombre),
+        ].filter((x): x is string => Boolean(x)),
+      })),
+    }),
+  );
 
   return {
     ok: true,

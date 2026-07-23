@@ -46,13 +46,45 @@ function Campo({
   );
 }
 
+const CLAVE_CLIENTE = "casta-cliente";
+
+/**
+ * Datos del cliente guardados en este teléfono. Recordarlos sin cuenta ni
+ * contraseña da lo mismo que un login —pedir de nuevo es un toque— sin la
+ * fricción de registrarse, y respeta el "pedir sin crear cuenta" del brief.
+ *
+ * CartPanel solo se monta al abrir el carrito (nunca en el servidor), así que
+ * leer localStorage acá no rompe la hidratación.
+ */
+function leerClienteGuardado(): {
+  nombre: string;
+  telefono: string;
+  direccion: string;
+} {
+  const vacio = { nombre: "", telefono: "", direccion: "" };
+  if (typeof window === "undefined") return vacio;
+  try {
+    const guardado = localStorage.getItem(CLAVE_CLIENTE);
+    if (!guardado) return vacio;
+    const d = JSON.parse(guardado);
+    return {
+      nombre: d.nombre ?? "",
+      telefono: d.telefono ?? "",
+      direccion: d.direccion ?? "",
+    };
+  } catch {
+    return vacio;
+  }
+}
+
 export function CartPanel({ onClose }: { onClose: () => void }) {
   const { lineas, subtotal, cambiarCantidad, quitar, vaciar } = useCart();
 
+  const recordado = leerClienteGuardado();
   const [tipo, setTipo] = useState<TipoPedido>("retiro");
-  const [nombre, setNombre] = useState("");
-  const [telefono, setTelefono] = useState("");
-  const [direccion, setDireccion] = useState("");
+  const [nombre, setNombre] = useState(recordado.nombre);
+  const [telefono, setTelefono] = useState(recordado.telefono);
+  const [direccion, setDireccion] = useState(recordado.direccion);
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
   const [ubicacion, setUbicacion] = useState<{ lat: number; lng: number } | null>(null);
@@ -65,6 +97,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     total: number;
     enlace: string;
   } | null>(null);
+
 
   const faltaNombre = !nombre.trim();
   const faltaTelefono = !telefono.trim();
@@ -124,6 +157,20 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     if (!resultado.ok) {
       setFallo(resultado.error);
       return;
+    }
+
+    // Guardar los datos para el próximo pedido
+    try {
+      localStorage.setItem(
+        CLAVE_CLIENTE,
+        JSON.stringify({
+          nombre: datos.nombre,
+          telefono: datos.telefono,
+          direccion: datos.direccion ?? "",
+        }),
+      );
+    } catch {
+      // Si no se puede guardar, el pedido igual salió
     }
 
     // El total del mensaje es el del servidor, no el del navegador
