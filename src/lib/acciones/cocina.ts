@@ -1,6 +1,8 @@
 "use server";
 
+import { waitUntil } from "@vercel/functions";
 import { createClient } from "@/lib/supabase/server";
+import { avisarClientePush } from "@/lib/push";
 import {
   ESTADOS,
   type EstadoPedido,
@@ -122,15 +124,29 @@ export async function cambiarEstadoPedido(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase
+  // Devuelve numero y tipo para poder avisarle al cliente con el texto correcto
+  const { data, error } = await supabase
     .from("orders")
     .update({ estado })
-    .eq("id", id);
+    .eq("id", id)
+    .select("numero, tipo")
+    .single();
 
-  if (error) {
-    console.error("No se pudo cambiar el estado:", error.message);
+  if (error || !data) {
+    console.error("No se pudo cambiar el estado:", error?.message);
     return { ok: false, error: "No se pudo actualizar el pedido." };
   }
+
+  // Aviso al cliente en segundo plano, solo en los estados que le importan.
+  // No bloquea ni puede tumbar el cambio de estado en la cocina.
+  waitUntil(
+    avisarClientePush(
+      id,
+      data.numero as number,
+      data.tipo as "retiro" | "delivery",
+      estado,
+    ),
+  );
 
   return { ok: true };
 }

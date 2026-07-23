@@ -5,6 +5,8 @@ import { describirOpciones, subtotalLinea } from "@/lib/cart";
 import { usd } from "@/lib/format";
 import { linkWhatsApp, mensajePedido, type TipoPedido } from "@/lib/whatsapp";
 import { crearPedido } from "@/lib/acciones/crear-pedido";
+import { guardarSuscripcion } from "@/lib/acciones/suscribir";
+import { soportaPush, suscribirCliente } from "@/lib/push-cliente";
 import { useCart } from "./CartProvider";
 import { Sheet } from "./Sheet";
 
@@ -93,10 +95,15 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const [intentado, setIntentado] = useState(false);
   /** Queda listo cuando el pedido ya está guardado en la base */
   const [confirmado, setConfirmado] = useState<{
+    id: string;
     numero: number;
+    tipo: TipoPedido;
     total: number;
     enlace: string;
   } | null>(null);
+  const [avisos, setAvisos] = useState<"idle" | "pidiendo" | "activados" | "no">(
+    "idle",
+  );
 
 
   const faltaNombre = !nombre.trim();
@@ -182,14 +189,33 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     );
 
     setConfirmado({
+      id: resultado.id,
       numero: resultado.numero,
+      tipo,
       total: resultado.total,
       enlace: linkWhatsApp(mensaje),
     });
     vaciar();
   };
 
+  const activarAvisos = async () => {
+    if (!confirmado) return;
+    setAvisos("pidiendo");
+    const sub = await suscribirCliente();
+    if (!sub) {
+      setAvisos("no");
+      return;
+    }
+    const r = await guardarSuscripcion(confirmado.id, sub);
+    setAvisos(r.ok ? "activados" : "no");
+  };
+
   if (confirmado) {
+    const textoAviso =
+      confirmado.tipo === "delivery"
+        ? "Te avisamos cuando tu pedido salga en camino."
+        : "Te avisamos cuando esté listo para buscar.";
+
     return (
       <Sheet titulo={`Pedido #${confirmado.numero}`} onClose={onClose}>
         <div className="py-4 text-center">
@@ -218,6 +244,45 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           >
             Abrir WhatsApp
           </a>
+
+          {/* Avisos push: solo se ofrece si el navegador los soporta */}
+          {soportaPush() && avisos !== "activados" && (
+            <div className="mt-4 border-t border-bone-line pt-4">
+              {avisos === "no" ? (
+                <p className="font-mono text-[11px] text-bone-mute">
+                  Sin avisos por ahora. Igual podés seguir tu pedido por
+                  WhatsApp.
+                </p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={activarAvisos}
+                    disabled={avisos === "pidiendo"}
+                    className="w-full rounded-full border border-bone-ink px-6 py-3 font-mono text-xs font-bold uppercase tracking-[0.06em] text-bone-ink transition-colors hover:bg-bone-ink hover:text-bone disabled:opacity-60"
+                  >
+                    {avisos === "pidiendo"
+                      ? "Activando…"
+                      : "Avisame cuando esté listo"}
+                  </button>
+                  <p className="mt-2 font-mono text-[10px] text-bone-mute">
+                    {textoAviso}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {avisos === "activados" && (
+            <div className="mt-4 border-t border-bone-line pt-4">
+              <p className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-emerald-700">
+                Avisos activados
+              </p>
+              <p className="mt-1 font-mono text-[10px] text-bone-mute">
+                {textoAviso}
+              </p>
+            </div>
+          )}
         </div>
       </Sheet>
     );

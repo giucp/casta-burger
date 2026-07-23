@@ -40,6 +40,8 @@ export type DatosEntrada = {
 export type ResultadoPedido =
   | {
       ok: true;
+      /** id del pedido, para ligarle la suscripción push del cliente */
+      id: string;
       numero: number;
       total: number;
       lineas: { nombre: string; cantidad: number; subtotal: number }[];
@@ -235,6 +237,7 @@ export async function crearPedido(
 
   return {
     ok: true,
+    id: pedido.id,
     numero: pedido.numero,
     total: subtotal,
     lineas: items.map((i) => ({

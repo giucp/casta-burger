@@ -37,6 +37,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0007_menu_item_borrable.sql` | Borrar un producto no rompe el histórico |
 | `0008_menu_agotado_visible.sql` | El público ve lo agotado, atenuado |
 | `0009_quitar_combo.sql` | Fuera la categoría Combo (era la promo 3 Cheese) |
+| `0010_push_suscripciones.sql` | Tabla de suscripciones a avisos push del cliente |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -77,6 +78,7 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] La web recuerda los datos del cliente en su teléfono (sin cuenta)
 - [x] Delivery con ubicación GPS compartida como en WhatsApp
 - [x] PWA instalable: ícono y nombre propios, se agrega a la pantalla de inicio
+- [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
 
 ## Pendientes conocidos
 
