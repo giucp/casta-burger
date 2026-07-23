@@ -4,7 +4,9 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -34,8 +36,44 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
+/**
+ * El carrito sobrevive al refresco: se guarda en localStorage. Un cliente que
+ * arma el pedido, se distrae y vuelve, no debería encontrarlo vacío.
+ *
+ * Los precios guardados son solo para mostrar: al confirmar, el servidor
+ * recalcula todo contra el menú vigente, así que un carrito viejo no puede
+ * pagar precios viejos.
+ */
+const CLAVE_CARRITO = "casta-carrito-v1";
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [lineas, setLineas] = useState<LineaCarrito[]>([]);
+  const cargado = useRef(false);
+
+  useEffect(() => {
+    try {
+      const crudo = localStorage.getItem(CLAVE_CARRITO);
+      if (crudo) {
+        const datos = JSON.parse(crudo) as LineaCarrito[];
+        // No puede ir en el useState inicial: en el servidor no hay
+        // localStorage y el HTML no coincidiría con el del cliente.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (Array.isArray(datos) && datos.length > 0) setLineas(datos);
+      }
+    } catch {
+      // Un carrito guardado corrupto no puede romper la página
+    }
+    cargado.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!cargado.current) return;
+    try {
+      localStorage.setItem(CLAVE_CARRITO, JSON.stringify(lineas));
+    } catch {
+      // Sin espacio o en modo privado: el carrito sigue, solo no persiste
+    }
+  }, [lineas]);
 
   const agregar = useCallback(
     (

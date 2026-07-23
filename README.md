@@ -60,9 +60,11 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Auth del dueño por magic link, `/admin` protegido por middleware
 - [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
+- [x] Compras reales: registrar y borrar contra la base
+- [x] Números reales: ventas (= pedidos entregados), compras y ganancia por día
+- [x] El carrito sobrevive al refresco (localStorage)
 - [x] Deploy en Vercel
 - [ ] Aviso por Telegram (respaldo del sonido cuando el teléfono está bloqueado)
-- [ ] Números y Compras contra datos reales (hoy de ejemplo)
 - [ ] CRUD del menú desde `/admin`
 
 ## Pendientes conocidos
@@ -73,8 +75,6 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - **Fotos de producto**: hoy son placeholders monolínea.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
   se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
-- **El carrito no sobrevive al refresco** de la página (vive en memoria). Si se
-  quiere que aguante, va a `localStorage`.
 
 ## Antes de que el negocio dependa de esto
 

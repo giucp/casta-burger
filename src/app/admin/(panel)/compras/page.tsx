@@ -1,20 +1,15 @@
 import { ComprasPanel } from "@/components/admin/ComprasPanel";
-import { comprasDemo } from "@/lib/admin/datos";
-import { HORARIO } from "@/lib/config";
+import { listarCompras } from "@/lib/acciones/compras";
+import { hoyCaracas } from "@/lib/acciones/numeros";
 
 export const metadata = { title: "Compras — Casta Admin" };
 
-/** La fecha por defecto del formulario es hoy en Caracas, no en el servidor. */
-function hoyEnCaracas(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: HORARIO.timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+/** Las compras se registran a diario: nunca una versión guardada. */
+export const dynamic = "force-dynamic";
 
-export default function ComprasPage() {
+export default async function ComprasPage() {
+  const [inicial, hoy] = await Promise.all([listarCompras(), hoyCaracas()]);
+
   return (
     <>
       <h1 className="mb-1 font-display text-4xl uppercase tracking-[0.01em]">
@@ -25,7 +20,7 @@ export default function ComprasPage() {
         para saber la ganancia neta.
       </p>
 
-      <ComprasPanel inicial={comprasDemo()} hoy={hoyEnCaracas()} />
+      <ComprasPanel inicial={inicial} hoy={hoy} />
     </>
   );
 }

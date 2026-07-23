@@ -1,10 +1,11 @@
 import { usd } from "@/lib/format";
-import { fechaCorta, resumenDemo, totales } from "@/lib/admin/datos";
+import { fechaCorta } from "@/lib/admin/datos";
 import { listarInventario } from "@/lib/acciones/inventario";
+import { hoyCaracas, resumenDiario } from "@/lib/acciones/numeros";
 
 export const metadata = { title: "Números — Casta Admin" };
 
-/** El bajo-stock sale del inventario real, que cambia a mano. */
+/** Ventas, compras y stock cambian todo el tiempo: nada de versiones guardadas. */
 export const dynamic = "force-dynamic";
 
 function Tarjeta({
@@ -39,11 +40,20 @@ function Tarjeta({
 }
 
 export default async function NumerosPage() {
-  const resumen = resumenDemo();
-  const t = totales(resumen);
-  const bajoStock = (await listarInventario()).filter(
-    (i) => i.cantidad <= i.umbralAlerta,
-  );
+  const [resumen, inventario, hoy] = await Promise.all([
+    resumenDiario(),
+    listarInventario(),
+    hoyCaracas(),
+  ]);
+
+  const bajoStock = inventario.filter((i) => i.cantidad <= i.umbralAlerta);
+  const deHoy = resumen.find((f) => f.dia === hoy) ?? {
+    dia: hoy,
+    pedidos: 0,
+    ventas: 0,
+    compras: 0,
+    gananciaNeta: 0,
+  };
 
   return (
     <>
@@ -51,17 +61,22 @@ export default async function NumerosPage() {
         Números
       </h1>
       <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.1em] text-smoke">
-        Ventas y compras son datos de ejemplo · el bajo stock es real
+        Hoy {fechaCorta(hoy)} · una venta cuenta cuando el pedido se marca
+        entregado
       </p>
 
       <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Tarjeta etiqueta="Pedidos" valor={String(t.pedidos)} />
-        <Tarjeta etiqueta="Ventas" valor={usd(t.ventas)} />
-        <Tarjeta etiqueta="Compras" valor={usd(t.compras)} tono="malo" />
+        <Tarjeta etiqueta="Entregados hoy" valor={String(deHoy.pedidos)} />
+        <Tarjeta etiqueta="Ventas hoy" valor={usd(deHoy.ventas)} />
         <Tarjeta
-          etiqueta="Ganancia neta"
-          valor={usd(t.gananciaNeta)}
-          tono={t.gananciaNeta >= 0 ? "bueno" : "malo"}
+          etiqueta="Compras hoy"
+          valor={usd(deHoy.compras)}
+          tono="malo"
+        />
+        <Tarjeta
+          etiqueta="Ganancia hoy"
+          valor={usd(deHoy.gananciaNeta)}
+          tono={deHoy.gananciaNeta >= 0 ? "bueno" : "malo"}
           nota="ventas − compras"
         />
       </div>
@@ -78,41 +93,50 @@ export default async function NumerosPage() {
       )}
 
       <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
-        Día por día
+        Últimos 14 días
       </h2>
 
-      <div className="overflow-x-auto rounded-card border border-white/8">
-        <table className="w-full min-w-[560px] border-collapse text-left">
-          <thead>
-            <tr className="bg-card font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
-              <th className="px-4 py-2.5 font-normal">Día</th>
-              <th className="px-4 py-2.5 text-right font-normal">Pedidos</th>
-              <th className="px-4 py-2.5 text-right font-normal">Ventas</th>
-              <th className="px-4 py-2.5 text-right font-normal">Compras</th>
-              <th className="px-4 py-2.5 text-right font-normal">Ganancia</th>
-            </tr>
-          </thead>
-          <tbody className="font-mono text-sm">
-            {resumen.map((f) => (
-              <tr key={f.dia} className="border-t border-white/8">
-                <td className="px-4 py-3 capitalize">{fechaCorta(f.dia)}</td>
-                <td className="px-4 py-3 text-right">{f.pedidos}</td>
-                <td className="px-4 py-3 text-right">{usd(f.ventas)}</td>
-                <td className="px-4 py-3 text-right text-smoke">
-                  {f.compras > 0 ? usd(f.compras) : "—"}
-                </td>
-                <td
-                  className={`px-4 py-3 text-right font-bold ${
-                    f.gananciaNeta >= 0 ? "text-emerald-400" : "text-casta"
-                  }`}
-                >
-                  {usd(f.gananciaNeta)}
-                </td>
+      {resumen.length === 0 ? (
+        <p className="rounded-card border border-white/8 py-10 text-center font-mono text-sm text-smoke">
+          Sin movimientos todavía. Acá van a aparecer las ventas y las compras
+          de cada día.
+        </p>
+      ) : (
+        <div className="overflow-x-auto rounded-card border border-white/8">
+          <table className="w-full min-w-[560px] border-collapse text-left">
+            <thead>
+              <tr className="bg-card font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+                <th className="px-4 py-2.5 font-normal">Día</th>
+                <th className="px-4 py-2.5 text-right font-normal">
+                  Entregados
+                </th>
+                <th className="px-4 py-2.5 text-right font-normal">Ventas</th>
+                <th className="px-4 py-2.5 text-right font-normal">Compras</th>
+                <th className="px-4 py-2.5 text-right font-normal">Ganancia</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="font-mono text-sm">
+              {resumen.map((f) => (
+                <tr key={f.dia} className="border-t border-white/8">
+                  <td className="px-4 py-3 capitalize">{fechaCorta(f.dia)}</td>
+                  <td className="px-4 py-3 text-right">{f.pedidos}</td>
+                  <td className="px-4 py-3 text-right">{usd(f.ventas)}</td>
+                  <td className="px-4 py-3 text-right text-smoke">
+                    {f.compras > 0 ? usd(f.compras) : "—"}
+                  </td>
+                  <td
+                    className={`px-4 py-3 text-right font-bold ${
+                      f.gananciaNeta >= 0 ? "text-emerald-400" : "text-casta"
+                    }`}
+                  >
+                    {usd(f.gananciaNeta)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   );
 }

@@ -7,19 +7,17 @@ import {
   fechaCorta,
   type Compra,
 } from "@/lib/admin/datos";
+import { borrarCompra, crearCompra } from "@/lib/acciones/compras";
 
 /**
- * Registro de compras de insumos (§6).
- *
- * TODO(fase 2): persistir en la tabla `purchases` de Supabase. Hoy lo que se
- * agrega vive en memoria y se pierde al recargar.
+ * Registro de compras de insumos (§6), contra la tabla `purchases`.
  */
 export function ComprasPanel({
   inicial,
   hoy,
 }: {
   inicial: Compra[];
-  /** Fecha de hoy en ISO, calculada en el servidor para no romper hidratación */
+  /** Fecha de hoy en Caracas, calculada en el servidor */
   hoy: string;
 }) {
   const [compras, setCompras] = useState(inicial);
@@ -28,6 +26,7 @@ export function ComprasPanel({
   const [monto, setMonto] = useState("");
   const [categoria, setCategoria] = useState<string>(CATEGORIAS_COMPRA[0]);
   const [fecha, setFecha] = useState(hoy);
+  const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const total = useMemo(
@@ -35,31 +34,41 @@ export function ComprasPanel({
     [compras],
   );
 
-  const agregar = (e: React.FormEvent) => {
+  const agregar = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const valor = Number(monto.replace(",", "."));
     if (!descripcion.trim()) return setError("Falta la descripción");
     if (Number.isNaN(valor) || valor <= 0) return setError("Monto inválido");
 
-    setCompras((actuales) => [
-      {
-        id: `nueva-${actuales.length}-${descripcion.slice(0, 8)}`,
-        descripcion: descripcion.trim(),
-        monto: valor,
-        categoria,
-        fecha,
-      },
-      ...actuales,
-    ]);
+    setGuardando(true);
+    const r = await crearCompra({
+      descripcion,
+      monto: valor,
+      categoria,
+      fecha,
+    });
+    setGuardando(false);
+
+    if (!r.ok) return setError(r.error);
+    if (r.dato) setCompras((actuales) => [r.dato!, ...actuales]);
 
     setDescripcion("");
     setMonto("");
-    setError(null);
   };
 
-  const quitar = (id: string) =>
-    setCompras((actuales) => actuales.filter((c) => c.id !== id));
+  const quitar = async (compra: Compra) => {
+    if (!confirm(`¿Borrar "${compra.descripcion}" (${usd(compra.monto)})?`))
+      return;
+    const previas = compras;
+    setCompras((actuales) => actuales.filter((c) => c.id !== compra.id));
+    const r = await borrarCompra(compra.id);
+    if (!r.ok) {
+      setCompras(previas);
+      setError(r.error);
+    }
+  };
 
   return (
     <>
@@ -128,9 +137,10 @@ export function ComprasPanel({
 
           <button
             type="submit"
-            className="rounded-full bg-casta px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-casta-deep"
+            disabled={guardando}
+            className="rounded-full bg-casta px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white transition-colors hover:bg-casta-deep disabled:opacity-60"
           >
-            Agregar
+            {guardando ? "…" : "Agregar"}
           </button>
         </div>
 
@@ -156,39 +166,45 @@ export function ComprasPanel({
 
       <div className="mb-3 flex items-baseline justify-between">
         <h2 className="font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
-          Últimas compras
+          Últimos 30 días
         </h2>
         <span className="font-mono text-sm font-bold text-casta">
           {usd(total)}
         </span>
       </div>
 
-      <ul className="overflow-hidden rounded-card border border-white/8">
-        {compras.map((c) => (
-          <li
-            key={c.id}
-            className="flex items-center gap-3 border-b border-white/8 px-4 py-3 last:border-b-0"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm">{c.descripcion}</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-smoke">
-                {fechaCorta(c.fecha)} · {c.categoria}
-              </p>
-            </div>
-            <span className="shrink-0 font-mono text-sm font-bold">
-              {usd(c.monto)}
-            </span>
-            <button
-              type="button"
-              onClick={() => quitar(c.id)}
-              aria-label={`Borrar ${c.descripcion}`}
-              className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-smoke transition-colors hover:text-casta"
+      {compras.length === 0 ? (
+        <p className="rounded-card border border-white/8 py-10 text-center font-mono text-sm text-smoke">
+          Sin compras registradas. Anotá la primera arriba.
+        </p>
+      ) : (
+        <ul className="overflow-hidden rounded-card border border-white/8">
+          {compras.map((c) => (
+            <li
+              key={c.id}
+              className="flex items-center gap-3 border-b border-white/8 px-4 py-3 last:border-b-0"
             >
-              Borrar
-            </button>
-          </li>
-        ))}
-      </ul>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">{c.descripcion}</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-smoke">
+                  {fechaCorta(c.fecha)} · {c.categoria}
+                </p>
+              </div>
+              <span className="shrink-0 font-mono text-sm font-bold">
+                {usd(c.monto)}
+              </span>
+              <button
+                type="button"
+                onClick={() => quitar(c)}
+                aria-label={`Borrar ${c.descripcion}`}
+                className="shrink-0 font-mono text-[10px] uppercase tracking-[0.08em] text-smoke transition-colors hover:text-casta"
+              >
+                Borrar
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 }

@@ -53,9 +53,8 @@ export default async function AdminLayout({
         {children}
       </main>
 
-      {/* Cocina e inventario ya son reales; ventas/compras aún de ejemplo */}
       <p className="border-t border-white/8 px-5 py-3 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-smoke/70">
-        Ventas y compras todavía muestran datos de ejemplo
+        Casta Burger · panel del negocio
       </p>
     </div>
   );
