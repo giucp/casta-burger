@@ -1,9 +1,12 @@
 import { InventarioTabla } from "@/components/admin/InventarioTabla";
-import { inventarioDemo } from "@/lib/admin/datos";
+import { listarInventario } from "@/lib/acciones/inventario";
 
 export const metadata = { title: "Inventario — Casta Admin" };
 
-export default function InventarioPage() {
+/** El inventario cambia a mano todo el tiempo: nunca una versión guardada. */
+export const dynamic = "force-dynamic";
+
+export default async function InventarioPage() {
   return (
     <>
       <h1 className="mb-1 font-display text-4xl uppercase tracking-[0.01em]">
@@ -14,7 +17,7 @@ export default function InventarioPage() {
         pedido.
       </p>
 
-      <InventarioTabla inicial={inventarioDemo()} />
+      <InventarioTabla inicial={await listarInventario()} />
     </>
   );
 }

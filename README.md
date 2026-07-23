@@ -57,8 +57,9 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Carrito + selector de proteína, presentación, papás y extras
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
 - [x] Pantalla de cocina: tarjetas por estado, filtros, sonido — **con datos de ejemplo**
-- [x] Back-office `/admin`: Números (ganancia neta), Inventario, Compras — **con
-      datos de ejemplo**
+- [x] Inventario real: agregar, editar, ajustar y borrar contra la base
+- [x] Cocina en vivo (Realtime) con alerta que insiste y pantalla despierta
+- [ ] Back-office: Números y Compras contra datos reales (hoy de ejemplo)
 - [x] Auth del dueño por magic link, `/admin` protegido por middleware
 - [x] Migración corrida en Supabase
 - [x] Menú leído desde la base (`menu_items`)

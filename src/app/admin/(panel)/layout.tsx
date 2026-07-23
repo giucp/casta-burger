@@ -53,9 +53,9 @@ export default async function AdminLayout({
         {children}
       </main>
 
-      {/* TODO: quitar cuando las pantallas lean de Supabase */}
+      {/* Cocina e inventario ya son reales; ventas/compras aún de ejemplo */}
       <p className="border-t border-white/8 px-5 py-3 text-center font-mono text-[10px] uppercase tracking-[0.1em] text-smoke/70">
-        Números, inventario y compras todavía muestran datos de ejemplo
+        Ventas y compras todavía muestran datos de ejemplo
       </p>
     </div>
   );

@@ -7,15 +7,6 @@
  * cuerpo de las funciones de abajo por queries — sin tocar las pantallas.
  */
 
-/** Tabla `inventory` */
-export type ItemInventario = {
-  id: string;
-  nombre: string;
-  cantidad: number;
-  unidad: string;
-  umbralAlerta: number;
-};
-
 /** Tabla `purchases` */
 export type Compra = {
   id: string;
@@ -44,26 +35,6 @@ export const CATEGORIAS_COMPRA = [
   "Gas",
   "Otros",
 ] as const;
-
-/** Está en alerta cuando la cantidad tocó o bajó del umbral (§6). */
-export function enAlerta(item: ItemInventario): boolean {
-  return item.cantidad <= item.umbralAlerta;
-}
-
-export function inventarioDemo(): ItemInventario[] {
-  return [
-    { id: "1", nombre: "Carne molida", cantidad: 8, unidad: "kg", umbralAlerta: 5 },
-    { id: "2", nombre: "Cordero", cantidad: 3, unidad: "kg", umbralAlerta: 3 },
-    { id: "3", nombre: "Pollo", cantidad: 6, unidad: "kg", umbralAlerta: 4 },
-    { id: "4", nombre: "Pan de batata", cantidad: 40, unidad: "und", umbralAlerta: 20 },
-    { id: "5", nombre: "Queso facilista", cantidad: 2, unidad: "kg", umbralAlerta: 2 },
-    { id: "6", nombre: "Tocineta", cantidad: 4, unidad: "kg", umbralAlerta: 2 },
-    { id: "7", nombre: "Cebolla", cantidad: 7, unidad: "kg", umbralAlerta: 3 },
-    { id: "8", nombre: "Papás", cantidad: 12, unidad: "kg", umbralAlerta: 6 },
-    { id: "9", nombre: "Coca-Cola lata", cantidad: 18, unidad: "und", umbralAlerta: 24 },
-    { id: "10", nombre: "Salsa de la casa", cantidad: 5, unidad: "L", umbralAlerta: 2 },
-  ];
-}
 
 export function comprasDemo(): Compra[] {
   return [

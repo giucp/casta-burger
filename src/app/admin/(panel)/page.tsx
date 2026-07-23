@@ -1,13 +1,11 @@
 import { usd } from "@/lib/format";
-import {
-  enAlerta,
-  fechaCorta,
-  inventarioDemo,
-  resumenDemo,
-  totales,
-} from "@/lib/admin/datos";
+import { fechaCorta, resumenDemo, totales } from "@/lib/admin/datos";
+import { listarInventario } from "@/lib/acciones/inventario";
 
 export const metadata = { title: "Números — Casta Admin" };
+
+/** El bajo-stock sale del inventario real, que cambia a mano. */
+export const dynamic = "force-dynamic";
 
 function Tarjeta({
   etiqueta,
@@ -40,10 +38,12 @@ function Tarjeta({
   );
 }
 
-export default function NumerosPage() {
+export default async function NumerosPage() {
   const resumen = resumenDemo();
   const t = totales(resumen);
-  const bajoStock = inventarioDemo().filter(enAlerta);
+  const bajoStock = (await listarInventario()).filter(
+    (i) => i.cantidad <= i.umbralAlerta,
+  );
 
   return (
     <>
@@ -51,7 +51,7 @@ export default function NumerosPage() {
         Números
       </h1>
       <p className="mb-5 font-mono text-[11px] uppercase tracking-[0.1em] text-smoke">
-        Últimos {resumen.length} días de servicio
+        Ventas y compras son datos de ejemplo · el bajo stock es real
       </p>
 
       <div className="mb-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
