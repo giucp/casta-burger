@@ -53,21 +53,17 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Sistema de diseño: tokens de color, Anton / Inter / Space Mono, sello, botones
 - [x] Web pública estática: top bar, hero, menú (panel hueso), footer
 - [x] Estado abierto/cerrado real, calculado contra `America/Caracas`
-- [x] Precios reales del menú impreso, con las dos presentaciones (Sola / White Meal)
-- [x] Carrito + selector de proteína, presentación, papás y extras
-- [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp prellenado
-- [x] Pantalla de cocina: tarjetas por estado, filtros, sonido — **con datos de ejemplo**
-- [x] Inventario real: agregar, editar, ajustar y borrar contra la base
-- [x] Cocina en vivo (Realtime) con alerta que insiste y pantalla despierta
-- [ ] Back-office: Números y Compras contra datos reales (hoy de ejemplo)
+- [x] Menú real en la base, con precios y promos
+- [x] Carrito + selector de proteína y extras
+- [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp
+- [x] Guardar el pedido, con N° y total calculados en el servidor
 - [x] Auth del dueño por magic link, `/admin` protegido por middleware
-- [x] Migración corrida en Supabase
-- [x] Menú leído desde la base (`menu_items`)
-- [ ] CRUD del menú desde `/admin`
-- [x] Guardar el pedido al confirmar, con N° de pedido y total calculados en el servidor
-- [ ] Conectar la cocina a Realtime (hoy los pedidos son de ejemplo)
-- [ ] Aviso por Telegram
+- [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
+- [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Deploy en Vercel
+- [ ] Aviso por Telegram (respaldo del sonido cuando el teléfono está bloqueado)
+- [ ] Números y Compras contra datos reales (hoy de ejemplo)
+- [ ] CRUD del menú desde `/admin`
 
 ## Pendientes conocidos
 
