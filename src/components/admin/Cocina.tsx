@@ -154,6 +154,8 @@ export function Cocina({ inicial }: { inicial: Pedido[] }) {
   const ahora = useAhora();
   const { activa, activar, sonar } = useCampana();
 
+  const nuevos = pedidos.filter((p) => p.estado === "nuevo").length;
+
   /**
    * El número más alto visto. Sirve para distinguir un pedido nuevo de un
    * cambio de estado: la campana solo debe sonar cuando entra uno.
@@ -183,23 +185,105 @@ export function Cocina({ inicial }: { inicial: Pedido[] }) {
    */
   useEffect(() => {
     const supabase = createClient();
-    const canal = supabase
-      .channel("cocina-pedidos")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => {
-          void refrescar();
-        },
-      )
-      .subscribe((estado) => {
-        setEnVivo(estado === "SUBSCRIBED");
-      });
+    let canal: ReturnType<typeof supabase.channel> | null = null;
+    let vivo = true;
+
+    (async () => {
+      // Realtime respeta el RLS de `orders`, que solo deja ver los pedidos a
+      // un usuario autenticado. Hay que pasarle el token de la sesión al
+      // socket: sin él, la base lo trata como visitante anónimo y filtra
+      // todos los eventos, así que el canal se conecta pero no recibe nada.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        await supabase.realtime.setAuth(session.access_token);
+      }
+      if (!vivo) return;
+
+      canal = supabase
+        .channel("cocina-pedidos")
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "orders" },
+          () => {
+            void refrescar();
+          },
+        )
+        .subscribe((estado) => {
+          setEnVivo(estado === "SUBSCRIBED");
+        });
+    })();
 
     return () => {
-      void supabase.removeChannel(canal);
+      vivo = false;
+      if (canal) void supabase.removeChannel(canal);
     };
   }, [refrescar]);
+
+  /**
+   * Respaldo: además de Realtime, recarga sola cada 12 s. Si la suscripción
+   * se cae o el wifi de la cocina hipa, los pedidos igual entran; y como
+   * `refrescar` toca la campana cuando ve un número nuevo, el sonido también
+   * llega por esta vía. Con Realtime funcionando, es solo un refresco extra
+   * inofensivo.
+   */
+  useEffect(() => {
+    const id = setInterval(() => void refrescar(), 12_000);
+    return () => clearInterval(id);
+  }, [refrescar]);
+
+  /**
+   * La alerta insiste mientras haya pedidos sin empezar: la campana repite
+   * cada 10 s hasta que el cocinero toca "Empezar" en todos. Cuando no quedan
+   * pedidos nuevos, se detiene sola.
+   */
+  useEffect(() => {
+    if (!activa || nuevos === 0) return;
+    const id = setInterval(() => sonar(), 10_000);
+    return () => clearInterval(id);
+  }, [activa, nuevos, sonar]);
+
+  /**
+   * Mantiene la pantalla encendida mientras la cocina está abierta y a la
+   * vista. Es lo que evita que el teléfono se duerma solo y corte el sonido.
+   * El navegador suelta el permiso al pasar la pestaña a segundo plano, así
+   * que se vuelve a pedir al volver.
+   */
+  useEffect(() => {
+    type NavConWakeLock = Navigator & {
+      wakeLock?: {
+        request(tipo: "screen"): Promise<{ release(): Promise<void> }>;
+      };
+    };
+    const nav = navigator as NavConWakeLock;
+    if (!nav.wakeLock) return;
+
+    let lock: { release(): Promise<void> } | null = null;
+    let vivo = true;
+
+    const pedir = async () => {
+      if (document.visibilityState !== "visible") return;
+      try {
+        lock = await nav.wakeLock!.request("screen");
+      } catch {
+        // Algunos navegadores lo niegan con poca batería. No es crítico.
+      }
+    };
+
+    const alCambiar = () => {
+      if (document.visibilityState === "visible" && vivo) void pedir();
+    };
+
+    void pedir();
+    document.addEventListener("visibilitychange", alCambiar);
+
+    return () => {
+      vivo = false;
+      document.removeEventListener("visibilitychange", alCambiar);
+      if (lock) void lock.release().catch(() => {});
+    };
+  }, []);
 
   const visibles = useMemo(
     () =>
@@ -210,8 +294,6 @@ export function Cocina({ inicial }: { inicial: Pedido[] }) {
       }),
     [pedidos, filtro],
   );
-
-  const nuevos = pedidos.filter((p) => p.estado === "nuevo").length;
 
   const cambiar = async (id: string, estado: EstadoPedido) => {
     setOcupado(id);
@@ -262,10 +344,16 @@ export function Cocina({ inicial }: { inicial: Pedido[] }) {
         </button>
       </div>
 
-      {!activa && (
+      {!activa ? (
         <p className="mb-4 rounded-card border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 font-mono text-[11px] text-amber-300">
-          El navegador no deja sonar nada hasta que toques la pantalla. Activá
-          el sonido al empezar el turno.
+          Tocá &quot;Activar sonido&quot; al empezar el turno. Mantené esta
+          pantalla abierta y no la cierres: el teléfono no se va a dormir solo
+          mientras esté a la vista.
+        </p>
+      ) : (
+        <p className="mb-4 font-mono text-[10px] uppercase tracking-[0.08em] text-smoke">
+          La alerta repite hasta que toques &quot;Empezar&quot;. Con la app en
+          segundo plano el aviso llega por Telegram.
         </p>
       )}
 
