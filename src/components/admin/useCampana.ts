@@ -32,22 +32,31 @@ export function useCampana() {
     if (!audio || audio.state !== "running") return;
 
     const ahora = audio.currentTime;
-    for (const [i, hz] of [880, 1320].entries()) {
+    // Cuatro tonos que suben, tipo sirena: más notas, más volumen y onda
+    // cuadrada (más estridente que la triangular). Pensado para cortar el
+    // ruido de una cocina y que no se pueda ignorar.
+    const notas = [988, 1319, 988, 1319];
+    for (const [i, hz] of notas.entries()) {
       const osc = audio.createOscillator();
       const vol = audio.createGain();
 
-      osc.type = "triangle";
+      osc.type = "square";
       osc.frequency.value = hz;
 
-      const t = ahora + i * 0.18;
+      const t = ahora + i * 0.14;
       vol.gain.setValueAtTime(0.0001, t);
-      vol.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
-      vol.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+      vol.gain.exponentialRampToValueAtTime(0.6, t + 0.015);
+      vol.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
 
       osc.connect(vol);
       vol.connect(audio.destination);
       osc.start(t);
-      osc.stop(t + 0.18);
+      osc.stop(t + 0.15);
+    }
+
+    // Vibración en móvil, sincronizada con los tonos
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate([120, 40, 120, 40, 120]);
     }
   }, []);
 

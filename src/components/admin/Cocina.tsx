@@ -229,13 +229,14 @@ export function Cocina({ inicial }: { inicial: Pedido[] }) {
   }, [refrescar]);
 
   /**
-   * La alerta insiste mientras haya pedidos sin empezar: la campana repite
-   * cada 10 s hasta que el cocinero toca "Empezar" en todos. Cuando no quedan
-   * pedidos nuevos, se detiene sola.
+   * La alerta insiste fuerte mientras haya pedidos sin empezar: la campana
+   * repite cada 2 s hasta que el cocinero toca "Empezar" en todos. Es a
+   * propósito molesta: un pedido sin atender tiene que fastidiar. Se detiene
+   * sola cuando no quedan pedidos nuevos.
    */
   useEffect(() => {
     if (!activa || nuevos === 0) return;
-    const id = setInterval(() => sonar(), 10_000);
+    const id = setInterval(() => sonar(), 2_000);
     return () => clearInterval(id);
   }, [activa, nuevos, sonar]);
 
