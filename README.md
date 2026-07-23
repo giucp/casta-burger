@@ -103,7 +103,12 @@ deshabilitan y la barra inferior avisa cuándo abrimos. El sello Abierto/Cerrado
 dice la verdad siempre, en los dos modos.
 
 **2. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
-proyecto de Supabase, Vercel y dominio.
+proyecto de Supabase, Vercel y dominio. Incluye cambiar `VAPID_SUBJECT` en las
+variables de Vercel al correo del negocio (hoy tiene el del desarrollador; es
+solo el contacto técnico que exige el estándar de push, no lo ve el cliente).
+
+**3. Configurar el aviso a la cocina por Telegram** (pendiente): crear el bot
+con @BotFather y cargar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel.
 
 ## Decisiones tomadas
 
