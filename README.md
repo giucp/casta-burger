@@ -79,6 +79,23 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Delivery con ubicación GPS compartida como en WhatsApp
 - [x] PWA instalable: ícono y nombre propios, se agrega a la pantalla de inicio
 - [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
+- [x] Tarjeta de compartir: al pegar el link en WhatsApp sale la marca, no un cuadro vacío
+
+## La imagen de compartir
+
+Es [`public/og.jpg`](public/og.jpg), un archivo estático de 1200×630 que se
+genera con las piezas reales de la marca:
+
+```bash
+node scripts/og.mjs
+```
+
+Solo hay que volver a correrlo si cambia el logo, el mensaje o el horario. El
+script se baja las fuentes la primera vez y el JPG resultante queda commiteado.
+
+Ojo con las pruebas: **WhatsApp cachea la vista previa** de cada link por
+bastante tiempo. Si el link ya se compartió antes, para ver la tarjeta nueva hay
+que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
 
 ## Pendientes conocidos
 
@@ -106,6 +123,8 @@ dice la verdad siempre, en los dos modos.
 proyecto de Supabase, Vercel y dominio. Incluye cambiar `VAPID_SUBJECT` en las
 variables de Vercel al correo del negocio (hoy tiene el del desarrollador; es
 solo el contacto técnico que exige el estándar de push, no lo ve el cliente).
+Si además se estrena dominio propio, hay que agregar `NEXT_PUBLIC_SITE_URL` con
+la dirección nueva, o la imagen de compartir sigue apuntando a `.vercel.app`.
 
 **3. Configurar el aviso a la cocina por Telegram** (pendiente): crear el bot
 con @BotFather y cargar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel.
