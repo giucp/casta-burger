@@ -11,7 +11,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: `${BUSINESS.nombre} — Hamburguesas smash`,
     short_name: BUSINESS.nombre,
     description:
-      "Hamburguesas smash de verdad en Alto Barinas. Pedí por acá y recogé, o te la llevamos.",
+      "Hamburguesas smash de verdad en Barinas. Pide por acá y recógela, o te la llevamos.",
     start_url: "/",
     display: "standalone",
     background_color: "#0C0C0C",

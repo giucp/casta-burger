@@ -216,12 +216,13 @@ const tarjeta = el(
       style: {
         display: "flex",
         fontFamily: "Space Mono",
-        fontSize: "17px",
-        letterSpacing: "0.16em",
+        fontSize: "16px",
+        letterSpacing: "0.12em",
         color: SMOKE,
       },
     },
-    "RETIRO O DELIVERY · ALTO BARINAS, BARINAS",
+    // No se agranda: más largo que esto se mete debajo de la plancha.
+    "DARK KITCHEN EN BARINAS · RETIRO O DELIVERY",
   ),
 );
 

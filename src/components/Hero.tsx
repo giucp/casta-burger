@@ -26,9 +26,7 @@ export function Hero({ estado }: { estado: EstadoNegocio }) {
           {/* Informativo, no de estado: va siempre en rojo. El sello que
               cambia a gris es el del top bar. */}
           <Stamp punto>{HORARIO.etiqueta}</Stamp>
-          <span>
-            {BUSINESS.zona}, {BUSINESS.ciudad.split(",")[0]}
-          </span>
+          <span>{BUSINESS.formato}</span>
         </div>
 
         <h1 className="font-display text-[clamp(52px,15vw,116px)] uppercase leading-[0.86] tracking-[0.005em]">

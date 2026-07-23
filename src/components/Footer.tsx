@@ -1,5 +1,5 @@
 import { BUSINESS } from "@/lib/config";
-import { InstagramIcon, WhatsAppIcon } from "./icons";
+import { InstagramIcon, MapPinIcon, WhatsAppIcon } from "./icons";
 
 function Block({
   titulo,
@@ -65,8 +65,27 @@ export function Footer() {
         </Block>
 
         <Block titulo="Dónde">
-          <p>{BUSINESS.zona}</p>
-          <p>{BUSINESS.ciudad}</p>
+          <p>{BUSINESS.formato}</p>
+          {/* Un solo enlace con las dos líneas adentro: así el área para tocar
+              es toda la fila, no dos renglones de 20 px. */}
+          {BUSINESS.mapa && (
+            <a
+              href={BUSINESS.mapa}
+              target="_blank"
+              rel="noreferrer"
+              className="group flex flex-col gap-0.5 transition-colors hover:text-casta"
+            >
+              <span className="flex items-center gap-2">
+                <span className="text-smoke transition-colors group-hover:text-casta">
+                  <MapPinIcon className="size-4.5" />
+                </span>
+                Cómo llegar
+              </span>
+              <span className="text-xs text-smoke">
+                Presiona acá y Google Maps te guía.
+              </span>
+            </a>
+          )}
         </Block>
 
         <Block titulo="Escríbenos">

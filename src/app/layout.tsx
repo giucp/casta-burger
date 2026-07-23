@@ -26,7 +26,7 @@ const spaceMono = Space_Mono({
 const SITIO =
   process.env.NEXT_PUBLIC_SITE_URL || "https://casta-burger.vercel.app";
 
-const TITULO = `${BUSINESS.nombre} — Hamburguesas smash en ${BUSINESS.zona}`;
+const TITULO = `${BUSINESS.nombre} — Hamburguesas smash en ${BUSINESS.ciudad}`;
 const DESCRIPCION =
   "Hamburguesas smash de verdad. Pan de batata, queso facilista y salsa de la casa. Pide por acá y recógela — o te la llevamos.";
 
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
         url: "/og.jpg",
         width: 1200,
         height: 630,
-        alt: `${BUSINESS.nombre} — hamburguesas smash en ${BUSINESS.zona}`,
+        alt: `${BUSINESS.nombre} — ${BUSINESS.formato}`,
       },
     ],
   },

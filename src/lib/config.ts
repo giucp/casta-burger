@@ -4,8 +4,19 @@
  */
 export const BUSINESS = {
   nombre: "Casta Burger",
-  zona: "Alto Barinas",
-  ciudad: "Barinas, Venezuela",
+  /**
+   * Cómo se presenta el negocio. No es un local con salón: es una cocina, se
+   * pide y se busca o se lleva. Va en el hero, en el pie y en la imagen que se
+   * ve al compartir el link (esa se regenera con `node scripts/og.mjs`).
+   */
+  formato: "Dark Kitchen en Barinas",
+  ciudad: "Barinas",
+  /**
+   * Enlace de Google Maps que guía hasta la cocina. Mientras esté vacío, el pie
+   * no muestra el "Cómo llegar" — mejor eso que un botón que no lleva a ningún
+   * lado.
+   */
+  mapa: "",
   instagram: "puracasta_",
   /** Número en formato wa.me (sin +, sin espacios). */
   whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "584227105981",

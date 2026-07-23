@@ -52,6 +52,25 @@ export function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
+/** Chincheta de mapa, para el "Cómo llegar" del pie. */
+export function MapPinIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 21.2c4.3-4.1 6.5-7.3 6.5-9.9a6.5 6.5 0 1 0-13 0c0 2.6 2.2 5.8 6.5 9.9Z" />
+      <circle cx="12" cy="11" r="2.4" />
+    </svg>
+  );
+}
+
 export function CartIcon({ className }: { className?: string }) {
   return (
     <svg
