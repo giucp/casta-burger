@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const SECCIONES = [
+  { href: "/admin", label: "Panel" },
   { href: "/admin/cocina", label: "Cocina" },
-  { href: "/admin", label: "Números" },
   { href: "/admin/inventario", label: "Inventario" },
   { href: "/admin/compras", label: "Compras" },
 ];

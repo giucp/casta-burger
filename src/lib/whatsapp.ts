@@ -10,6 +10,8 @@ export type DatosCliente = {
   tipo: TipoPedido;
   /** Solo si tipo = delivery */
   direccion?: string;
+  /** Enlace de Maps con la ubicación GPS que compartió el cliente */
+  ubicacionUrl?: string;
   /** Nota general del pedido */
   nota?: string;
 };
@@ -50,6 +52,9 @@ export function mensajePedido(
   if (datos.tipo === "delivery" && datos.direccion) {
     l.push(`Dirección: ${datos.direccion}`);
   }
+  if (datos.tipo === "delivery" && datos.ubicacionUrl) {
+    l.push(`Ubicación: ${datos.ubicacionUrl}`);
+  }
   if (datos.nota) {
     l.push(`Nota: ${datos.nota}`);
   }
@@ -68,4 +73,20 @@ export function mensajePedido(
 /** Link wa.me con el resumen prellenado. */
 export function linkWhatsApp(mensaje: string): string {
   return `https://wa.me/${BUSINESS.whatsapp}?text=${encodeURIComponent(mensaje)}`;
+}
+
+/**
+ * Enlace para escribirle al CLIENTE de un pedido (el dueño cobra por ahí).
+ * Convierte el teléfono local venezolano a formato internacional:
+ * "0414 1234567" -> wa.me/584141234567.
+ */
+export function linkWhatsAppCliente(telefono: string): string | null {
+  const digitos = telefono.replace(/\D/g, "");
+  if (digitos.length < 10) return null;
+  const intl = digitos.startsWith("58")
+    ? digitos
+    : digitos.startsWith("0")
+      ? "58" + digitos.slice(1)
+      : "58" + digitos;
+  return `https://wa.me/${intl}`;
 }

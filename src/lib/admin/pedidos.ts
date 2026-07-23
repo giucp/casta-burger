@@ -72,6 +72,17 @@ export function accionDe(estado: EstadoPedido): string | null {
   }
 }
 
+/** "hace 4 min". Solo se calcula en el cliente para no romper la hidratación. */
+export function antiguedad(creadoISO: string, ahora: number): string {
+  const min = Math.max(
+    0,
+    Math.floor((ahora - new Date(creadoISO).getTime()) / 60000),
+  );
+  if (min < 1) return "recién";
+  if (min < 60) return `hace ${min} min`;
+  return `hace ${Math.floor(min / 60)} h`;
+}
+
 /** Una línea del pedido, como la ve la cocina. */
 export type LineaPedido = {
   id: string;

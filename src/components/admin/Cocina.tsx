@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usd } from "@/lib/format";
 import {
   accionDe,
+  antiguedad,
   ESTADO_INFO,
   ESTADOS_ACTIVOS,
   siguienteEstado,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/admin/pedidos";
 import { cambiarEstadoPedido, listarPedidos } from "@/lib/acciones/cocina";
 import { createClient } from "@/lib/supabase/client";
+import { TextoConEnlaces } from "./TextoConEnlaces";
 import { useAhora } from "./useAhora";
 import { useCampana } from "./useCampana";
 
@@ -24,17 +26,6 @@ const FILTROS = [
 ] as const;
 
 type Filtro = (typeof FILTROS)[number]["valor"];
-
-/** "hace 4 min". Solo se calcula en el cliente para no romper la hidratación. */
-function antiguedad(creadoISO: string, ahora: number): string {
-  const min = Math.max(
-    0,
-    Math.floor((ahora - new Date(creadoISO).getTime()) / 60000),
-  );
-  if (min < 1) return "recién";
-  if (min < 60) return `hace ${min} min`;
-  return `hace ${Math.floor(min / 60)} h`;
-}
 
 function TarjetaPedido({
   pedido,
@@ -109,7 +100,11 @@ function TarjetaPedido({
         <p className="text-ash">
           {pedido.clienteNombre} · {pedido.clienteTel}
         </p>
-        {pedido.direccion && <p className="mt-0.5">{pedido.direccion}</p>}
+        {pedido.direccion && (
+          <p className="mt-0.5">
+            <TextoConEnlaces texto={pedido.direccion} />
+          </p>
+        )}
         {pedido.nota && <p className="mt-0.5 text-amber-300">{pedido.nota}</p>}
       </div>
 

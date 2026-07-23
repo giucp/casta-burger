@@ -26,6 +26,12 @@ export type DatosEntrada = {
   telefono: string;
   tipo: "retiro" | "delivery";
   direccion?: string;
+  /**
+   * Ubicación GPS compartida por el cliente. Van las coordenadas crudas y el
+   * enlace de Maps lo arma el servidor: si el navegador mandara la URL ya
+   * hecha, cualquiera podría inyectar un enlace a otro sitio en el pedido.
+   */
+  ubicacion?: { lat: number; lng: number };
   nota?: string;
 };
 
@@ -51,8 +57,19 @@ export async function crearPedido(
     return { ok: false, error: "Demasiados productos en un solo pedido." };
   if (!datos.nombre.trim() || !datos.telefono.trim())
     return { ok: false, error: "Faltan tu nombre o tu teléfono." };
-  if (datos.tipo === "delivery" && !datos.direccion?.trim())
-    return { ok: false, error: "Para delivery hace falta la dirección." };
+  const ubicacionValida =
+    datos.ubicacion !== undefined &&
+    Number.isFinite(datos.ubicacion.lat) &&
+    Number.isFinite(datos.ubicacion.lng) &&
+    Math.abs(datos.ubicacion.lat) <= 90 &&
+    Math.abs(datos.ubicacion.lng) <= 180;
+  if (datos.ubicacion !== undefined && !ubicacionValida)
+    return { ok: false, error: "La ubicación no es válida." };
+  if (datos.tipo === "delivery" && !datos.direccion?.trim() && !ubicacionValida)
+    return {
+      ok: false,
+      error: "Para delivery hace falta la dirección o tu ubicación.",
+    };
   if (
     lineas.some(
       (l) =>
@@ -143,6 +160,19 @@ export async function crearPedido(
   const subtotal =
     Math.round(items.reduce((s, i) => s + i.subtotal, 0) * 100) / 100;
 
+  // ---- dirección final: texto escrito, más el enlace de la ubicación ----
+  const partesDireccion: string[] = [];
+  if (datos.direccion?.trim())
+    partesDireccion.push(datos.direccion.trim().slice(0, 300));
+  if (ubicacionValida && datos.ubicacion)
+    partesDireccion.push(
+      `https://maps.google.com/?q=${datos.ubicacion.lat.toFixed(6)},${datos.ubicacion.lng.toFixed(6)}`,
+    );
+  const direccionFinal =
+    datos.tipo === "delivery" && partesDireccion.length > 0
+      ? partesDireccion.join(" · ").slice(0, 400)
+      : null;
+
   // ---- guardar ----
   const { data: pedido, error: errorPedido } = await supabase
     .from("orders")
@@ -150,7 +180,7 @@ export async function crearPedido(
       cliente_nombre: datos.nombre.trim().slice(0, 80),
       cliente_tel: datos.telefono.trim().slice(0, 40),
       tipo: datos.tipo,
-      direccion: datos.direccion?.trim().slice(0, 300) || null,
+      direccion: direccionFinal,
       subtotal,
       total: subtotal, // el envío se acuerda aparte por WhatsApp
       nota: datos.nota?.trim().slice(0, 300) || null,

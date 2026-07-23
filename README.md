@@ -62,6 +62,10 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Compras reales: registrar y borrar contra la base
 - [x] Números reales: ventas (= pedidos entregados), compras y ganancia por día
+- [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
+      cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
+- [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
+      WhatsApp y el pedido lleva el enlace de Maps
 - [x] El carrito sobrevive al refresco (localStorage)
 - [x] Deploy en Vercel
 - [ ] Aviso por Telegram (respaldo del sonido cuando el teléfono está bloqueado)

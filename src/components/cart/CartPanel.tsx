@@ -55,6 +55,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const [direccion, setDireccion] = useState("");
   const [nota, setNota] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const [ubicacion, setUbicacion] = useState<{ lat: number; lng: number } | null>(null);
+  const [geoEstado, setGeoEstado] = useState<"idle" | "pidiendo" | "error">("idle");
   const [fallo, setFallo] = useState<string | null>(null);
   const [intentado, setIntentado] = useState(false);
   /** Queda listo cuando el pedido ya está guardado en la base */
@@ -66,25 +68,46 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
 
   const faltaNombre = !nombre.trim();
   const faltaTelefono = !telefono.trim();
-  const faltaDireccion = tipo === "delivery" && !direccion.trim();
+  const faltaDireccion = tipo === "delivery" && !direccion.trim() && !ubicacion;
   const incompleto = faltaNombre || faltaTelefono || faltaDireccion;
+
+  const compartirUbicacion = () => {
+    if (!("geolocation" in navigator)) {
+      setGeoEstado("error");
+      return;
+    }
+    setGeoEstado("pidiendo");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setUbicacion({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setGeoEstado("idle");
+      },
+      () => setGeoEstado("error"),
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 30_000 },
+    );
+  };
 
   const confirmar = async () => {
     setIntentado(true);
     setFallo(null);
     if (incompleto || lineas.length === 0 || guardando) return;
 
+    const ubicacionUrl = ubicacion
+      ? `https://maps.google.com/?q=${ubicacion.lat.toFixed(6)},${ubicacion.lng.toFixed(6)}`
+      : undefined;
+
     const datos = {
       nombre: nombre.trim(),
       telefono: telefono.trim(),
       tipo,
       direccion: direccion.trim() || undefined,
+      ubicacionUrl,
       nota: nota.trim() || undefined,
     };
 
     setGuardando(true);
     const resultado = await crearPedido(
-      datos,
+      { ...datos, ubicacion: ubicacion ?? undefined },
       lineas.map((l) => ({
         menuItemId: l.menuItemId,
         cantidad: l.cantidad,
@@ -306,14 +329,58 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
         requerido
       />
       {tipo === "delivery" && (
-        <Campo
-          id="cliente-direccion"
-          etiqueta="Dirección"
-          valor={direccion}
-          onChange={setDireccion}
-          placeholder="Calle, casa/apto, referencia"
-          requerido
-        />
+        <>
+          <Campo
+            id="cliente-direccion"
+            etiqueta="Dirección"
+            valor={direccion}
+            onChange={setDireccion}
+            placeholder="Calle, casa/apto, referencia"
+            requerido={!ubicacion}
+          />
+
+          <div className="mb-3 -mt-1">
+            {ubicacion ? (
+              <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-600/40 bg-emerald-600/10 px-3 py-2.5">
+                <span className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-emerald-700">
+                  Ubicación adjuntada
+                </span>
+                <a
+                  href={`https://maps.google.com/?q=${ubicacion.lat.toFixed(6)},${ubicacion.lng.toFixed(6)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[11px] uppercase tracking-[0.06em] underline underline-offset-2"
+                >
+                  Ver en el mapa
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setUbicacion(null)}
+                  className="ml-auto font-mono text-[11px] uppercase tracking-[0.06em] text-bone-mute hover:text-casta"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={compartirUbicacion}
+                disabled={geoEstado === "pidiendo"}
+                className="w-full rounded-xl border border-bone-line px-3 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.06em] text-bone-soft transition-colors hover:border-bone-ink disabled:opacity-60"
+              >
+                {geoEstado === "pidiendo"
+                  ? "Obteniendo tu ubicación…"
+                  : "Compartir mi ubicación (GPS)"}
+              </button>
+            )}
+            {geoEstado === "error" && (
+              <p className="mt-1.5 font-mono text-[11px] text-casta">
+                No pudimos leer tu ubicación. Revisá el permiso del navegador o
+                escribí la dirección.
+              </p>
+            )}
+          </div>
+        </>
       )}
       <Campo
         id="pedido-nota"
