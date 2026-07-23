@@ -25,6 +25,16 @@ export const metadata: Metadata = {
   title: `${BUSINESS.nombre} — Hamburguesas smash en ${BUSINESS.zona}`,
   description:
     "Hamburguesas smash de verdad. Pan de batata, queso facilista y salsa de la casa. Pide por acá y recógela — o te la llevamos.",
+  // iOS no usa el manifest para el ícono de inicio: usa este.
+  appleWebApp: {
+    capable: true,
+    title: BUSINESS.nombre,
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

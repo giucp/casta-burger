@@ -76,6 +76,7 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Aviso por Telegram al entrar un pedido (activable con el token del bot)
 - [x] La web recuerda los datos del cliente en su teléfono (sin cuenta)
 - [x] Delivery con ubicación GPS compartida como en WhatsApp
+- [x] PWA instalable: ícono y nombre propios, se agrega a la pantalla de inicio
 
 ## Pendientes conocidos
 
