@@ -255,19 +255,20 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
                 </p>
               ) : (
                 <>
+                  <p className="mb-2 text-sm font-medium text-bone-ink">
+                    ¿Querés que te avisemos cuando esté listo?
+                  </p>
+                  <p className="mb-3 font-mono text-[10px] text-bone-mute">
+                    {textoAviso}
+                  </p>
                   <button
                     type="button"
                     onClick={activarAvisos}
                     disabled={avisos === "pidiendo"}
                     className="w-full rounded-full border border-bone-ink px-6 py-3 font-mono text-xs font-bold uppercase tracking-[0.06em] text-bone-ink transition-colors hover:bg-bone-ink hover:text-bone disabled:opacity-60"
                   >
-                    {avisos === "pidiendo"
-                      ? "Activando…"
-                      : "Avisame cuando esté listo"}
+                    {avisos === "pidiendo" ? "Activando…" : "Sí, avisame"}
                   </button>
-                  <p className="mt-2 font-mono text-[10px] text-bone-mute">
-                    {textoAviso}
-                  </p>
                 </>
               )}
             </div>
