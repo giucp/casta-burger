@@ -49,6 +49,10 @@ export function CintaMarca({ id, className }: { id: string; className?: string }
           >
             <g
               fill="var(--color-casta)"
+              // Misma idea que la mano de la plancha del hero: más tenue que
+              // el rojo sólido, para que quede como textura de fondo y no
+              // compita con el contenido.
+              opacity={0.35}
               transform={`translate(${(PASO - ANCHO_C) / 2} ${(ALTO - ALTO_C) / 2}) scale(${ESCALA})`}
             >
               <path d={C_LETRA} />
