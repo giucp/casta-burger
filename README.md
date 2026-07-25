@@ -82,6 +82,19 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
 - [x] Tarjeta de compartir: al pegar el link en WhatsApp sale la marca, no un cuadro vacío
 
+## Las piezas de la marca
+
+El pliego del diseñador es un EPS de Illustrator (`ELEMENTOS CASTA.eps`, fuera
+del repo). Para sacar cualquier pieza en SVG sin abrir Illustrator:
+
+```bash
+node scripts/marca-a-svg.mjs "ruta/ELEMENTOS CASTA.eps" marca-svg/
+```
+
+Escribe una pieza por archivo: el logotipo con manos, el rótulo CASTA, la
+plancha, la C sola y el CASTA con corona. De ahí salieron los dos trazos de la
+C que repite [`CintaMarca`](src/components/CintaMarca.tsx).
+
 ## La imagen de compartir
 
 Es [`public/og.jpg`](public/og.jpg), un archivo estático de 1200×630 que se
