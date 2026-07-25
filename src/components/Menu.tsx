@@ -3,15 +3,31 @@ import { ListaPedible } from "./ListaPedible";
 import { MenuCard } from "./MenuCard";
 import { Promos } from "./Promos";
 
-/** Encabezado de sección: título Anton + regla gruesa (§3). */
+/**
+ * Encabezado de sección: título Anton + regla gruesa (§3).
+ *
+ * La nota va SIEMPRE al lado del título, en todos los teléfonos. Antes se caía
+ * abajo o no según el ancho: "Burgers · carne · cordero · pollo" medía 324 px
+ * y un Android de 360 deja 320, así que el mismo diseño se veía distinto en
+ * cada modelo. Ahora las dos tipografías encogen con la pantalla (`clamp`) y
+ * el par entra siempre; a partir de un iPhone normal ya van a tamaño completo.
+ */
 function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
   return (
     <>
-      <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
-        <h2 className="font-display text-[clamp(34px,9vw,60px)] uppercase leading-none tracking-[0.01em]">
+      <div className="flex flex-nowrap items-baseline gap-x-3.5">
+        <h2 className="font-display text-[clamp(30px,9vw,60px)] uppercase leading-none tracking-[0.01em]">
           {titulo}
         </h2>
-        {nota && <span className="font-mono text-sm text-bone-mute">{nota}</span>}
+        {/* Sin `whitespace-nowrap` a propósito: con las medidas de arriba la
+            nota entra en una línea en cualquier teléfono, y si alguna vez no
+            entrara, prefiero que se parta antes de que la página se vaya de
+            ancho. */}
+        {nota && (
+          <span className="font-mono text-[clamp(11px,3.6vw,14px)] text-bone-mute">
+            {nota}
+          </span>
+        )}
       </div>
       <div className="mt-3.5 mb-6.5 h-[3px] bg-bone-ink" />
     </>
