@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import type { MenuItem } from "@/lib/menu";
 import { useCartUI } from "./cart/CartUI";
-import { BurgerGlyph } from "./icons";
+import { BurgerGlyph, FriesGlyph } from "./icons";
 import { Precio } from "./Precio";
 
 /**
@@ -22,13 +23,30 @@ export function MenuCard({
   // Sin precio definido no se puede pedir (hoy: las bebidas)
   const deshabilitado = agotado || !puedePedir || item.precio === null;
 
+  /**
+   * Las fotos van en `public/productos/`, así que `foto_url` es una ruta del
+   * sitio ("/productos/papas.jpg"). Una URL de otro dominio se ignora a
+   * propósito: next/image la rechazaría en runtime y tumbaría la página.
+   */
+  const foto = item.fotoUrl?.startsWith("/") ? item.fotoUrl : undefined;
+  const Glyph = item.categoria === "Fries" ? FriesGlyph : BurgerGlyph;
+
   return (
     <article
       className={`flex gap-4 border-b border-bone-line py-4.5 ${agotado ? "opacity-50" : ""}`}
     >
-      <div className="flex size-[78px] shrink-0 items-center justify-center overflow-hidden rounded-card bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)] sm:size-24">
-        {/* TODO: sustituir por la foto real del producto (§3) */}
-        <BurgerGlyph className="size-14" apagado={agotado} />
+      <div className="relative flex size-[78px] shrink-0 items-center justify-center overflow-hidden rounded-card bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)] sm:size-24">
+        {foto ? (
+          <Image
+            src={foto}
+            alt={item.nombre}
+            fill
+            sizes="(min-width: 640px) 96px, 78px"
+            className="object-cover"
+          />
+        ) : (
+          <Glyph className="size-14" apagado={agotado} />
+        )}
       </div>
 
       <div className="min-w-0 flex-1">

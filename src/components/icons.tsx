@@ -22,6 +22,29 @@ export function BurgerGlyph({
   );
 }
 
+/**
+ * Cartón de papas, mismo trazo que `BurgerGlyph`: es el marcador de la sección
+ * Fries mientras no haya foto real del producto.
+ */
+export function FriesGlyph({
+  className,
+  apagado = false,
+}: {
+  className?: string;
+  apagado?: boolean;
+}) {
+  return (
+    <svg className={className} viewBox="0 0 200 160" fill="none" aria-hidden>
+      <path
+        d="M62 72V30l18-4v46M86 72V16l18 3v53M110 72V34l18 6v32M44 72h112l-15 80H59L44 72zM49 98h102"
+        stroke={apagado ? "#b7ad99" : "#c9a24a"}
+        strokeWidth="5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function WhatsAppIcon({ className }: { className?: string }) {
   return (
     <svg

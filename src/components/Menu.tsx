@@ -11,7 +11,7 @@ function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
         <h2 className="font-display text-[clamp(34px,9vw,60px)] uppercase leading-none tracking-[0.01em]">
           {titulo}
         </h2>
-        {nota && <span className="font-mono text-xs text-bone-mute">{nota}</span>}
+        {nota && <span className="font-mono text-sm text-bone-mute">{nota}</span>}
       </div>
       <div className="mt-3.5 mb-6.5 h-[3px] bg-bone-ink" />
     </>
@@ -26,6 +26,7 @@ export function Menu({
   puedePedir: boolean;
 }) {
   const burgers = porCategoria(items, "Burgers");
+  const fries = porCategoria(items, "Fries");
   const extras = porCategoria(items, "Extras");
   const promos = porCategoria(items, "Promos");
   const bebidas = porCategoria(items, "Bebidas");
@@ -53,6 +54,19 @@ export function Menu({
               nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
             />
             {burgers.map((item) => (
+              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
+            ))}
+          </>
+        )}
+
+        {/* Las papas no son un agregado de la hamburguesa: se piden solas y
+            se ven como las burgers, con tarjeta y foto. */}
+        {fries.length > 0 && (
+          <>
+            <div className="mt-9.5" id="fries">
+              <SecHead titulo="Fries" nota="para acompañar" />
+            </div>
+            {fries.map((item) => (
               <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
             ))}
           </>

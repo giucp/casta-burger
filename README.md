@@ -38,6 +38,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0008_menu_agotado_visible.sql` | El público ve lo agotado, atenuado |
 | `0009_quitar_combo.sql` | Fuera la categoría Combo (era la promo 3 Cheese) |
 | `0010_push_suscripciones.sql` | Tabla de suscripciones a avisos push del cliente |
+| `0011_papas_seccion_propia.sql` | Las papas salen de Extras a su propia sección, Fries |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -102,7 +103,10 @@ que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
 - **"3 Cheese Burger" estaba duplicado** como Combo y como Promo, al mismo
   precio. Quedó solo en Promos, que además muestra el ahorro. El Combo está
   oculto, no borrado.
-- **Fotos de producto**: hoy son placeholders monolínea.
+- **Fotos de producto**: hoy son placeholders monolínea. La tarjeta ya sabe
+  mostrar la foto real: se pone el archivo en `public/productos/` y se guarda
+  esa ruta en `menu_items.foto_url` (ej: `/productos/papas.jpg`). Tiene que ser
+  una ruta del sitio, no una URL de otro dominio.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
   se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
 

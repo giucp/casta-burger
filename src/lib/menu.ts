@@ -5,11 +5,17 @@
  * leen con `obtenerMenu()` de `menu-db.ts`. El dueño los edita desde /admin.
  */
 
-export type Categoria = "Burgers" | "Extras" | "Promos" | "Bebidas";
+export type Categoria =
+  | "Burgers"
+  | "Fries"
+  | "Extras"
+  | "Promos"
+  | "Bebidas";
 
 /** Orden en que se muestran las secciones del menú. */
 export const CATEGORIAS: Categoria[] = [
   "Burgers",
+  "Fries",
   "Extras",
   "Promos",
   "Bebidas",
@@ -40,6 +46,9 @@ export type Proteina = (typeof PROTEINAS)[number];
  *
  * Las promos van cerradas a propósito: precio fijo, carne, y sin agregados.
  * Si se les pudiera cambiar algo habría que recalcular el descuento.
+ *
+ * Las papas tampoco llevan nada encima: son su propio producto, con su sección
+ * y su cantidad, no un agregado de la hamburguesa.
  */
 export function opcionesDe(categoria: Categoria) {
   const esBurger = categoria === "Burgers";
