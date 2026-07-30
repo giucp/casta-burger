@@ -25,6 +25,19 @@ export const BUSINESS = {
 } as const;
 
 /**
+ * Modo mantenimiento: la web pública no muestra NADA salvo el aviso. Ni menú,
+ * ni carrito, ni forma de pedir.
+ *
+ * Se prende y apaga desde las variables de entorno de Vercel, sin tocar el
+ * código: `MANTENIMIENTO=1` para apagar la web, borrar la variable (o ponerla
+ * en 0) para devolverla. Después de cambiarla hay que redesplegar, que en
+ * Vercel es un botón.
+ *
+ * `/admin` sigue funcionando normal: esto solo tapa la cara pública.
+ */
+export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
+
+/**
  * Modo demo: la web se ve y se usa completa aunque el local esté cerrado.
  *
  * El §5 del brief pide deshabilitar los botones "Agregar" fuera de horario, y

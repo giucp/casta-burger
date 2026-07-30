@@ -4,8 +4,10 @@ import { CartUIProvider } from "@/components/cart/CartUI";
 import { CintaMarca } from "@/components/CintaMarca";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
+import { Mantenimiento } from "@/components/Mantenimiento";
 import { Menu } from "@/components/Menu";
 import { TopBar } from "@/components/TopBar";
+import { MANTENIMIENTO } from "@/lib/config";
 import { estadoNegocio } from "@/lib/horario";
 import { obtenerMenu } from "@/lib/menu-db";
 import { porCategoria } from "@/lib/menu";
@@ -18,6 +20,10 @@ import { porCategoria } from "@/lib/menu";
 export const revalidate = 60;
 
 export default async function Home() {
+  // Antes de cualquier otra cosa: con la web en mantenimiento no se lee la
+  // base ni se arma nada del sitio, solo se muestra el aviso.
+  if (MANTENIMIENTO) return <Mantenimiento />;
+
   const estado = estadoNegocio();
   const menu = await obtenerMenu();
   const extras = porCategoria(menu, "Extras");
