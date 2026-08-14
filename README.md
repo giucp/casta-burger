@@ -40,6 +40,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0010_push_suscripciones.sql` | Tabla de suscripciones a avisos push del cliente |
 | `0011_papas_seccion_propia.sql` | Las papas salen de Extras a su propia sección, Fries |
 | `0012_fotos_reales.sql` | Las cuatro tarjetas con foto propia apuntan a la foto real |
+| `0013_foto_completa.sql` | Columna `foto_completa_url`: la foto entera, para verla en grande |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -100,22 +101,33 @@ C que repite [`CintaMarca`](src/components/CintaMarca.tsx).
 
 ## Las fotos de los productos
 
-Van en [`public/productos/`](public/productos), y la base las encuentra por
-`menu_items.foto_url` (ej: `/productos/casta-burger.webp`). Tiene que ser una
-ruta del sitio: una URL de otro dominio la rechaza `next/image` en runtime y
+Cada producto con foto tiene **dos archivos**, porque la foto se ve en dos
+lados y no sirve la misma:
+
+| Archivo | Dónde se ve | Columna |
+|---|---|---|
+| `<slug>.webp` | miniatura de la tarjeta, cuadrada de 720 px | `foto_url` |
+| `<slug>-completa.webp` | al tocar la tarjeta, entera y sin recortar | `foto_completa_url` |
+
+Van en [`public/productos/`](public/productos) y las rutas son **del sitio**,
+nunca de otro dominio: una URL externa la rechaza `next/image` en runtime y
 tumba la página.
 
-Para preparar una foto nueva:
+Para preparar una foto nueva, que escribe las dos:
 
 ```bash
 node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
 ```
 
-Recorta cuadrado —eligiendo el encuadre solo, que las fotos son verticales y
-un recorte al centro le come el pan— y pasa a WebP de 720 px. Los originales
-del fotógrafo (PNG de 1,5–2 MB) quedan en ~50 KB y **no van al repo**. Después
-hay que dejarlo escrito en la base con un `update`, como
-[`0012_fotos_reales.sql`](supabase/migrations/0012_fotos_reales.sql).
+El recorte cuadrado elige el encuadre solo, porque las fotos son verticales y
+uno al centro le come la corona del pan. Los originales del fotógrafo (PNG de
+1,5–2 MB) quedan en ~50 KB la miniatura y ~80 KB la completa, y **no van al
+repo**. Después hay que dejar las dos rutas escritas en la base con un
+`update`, como en
+[`0013_foto_completa.sql`](supabase/migrations/0013_foto_completa.sql).
+
+Si un producto tiene miniatura pero no foto completa, la tarjeta simplemente no
+se ofrece como tocable. Es mejor eso que prometer una foto que no abre.
 
 ## La imagen de compartir
 

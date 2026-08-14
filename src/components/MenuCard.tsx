@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { MenuItem } from "@/lib/menu";
 import { useCartUI } from "./cart/CartUI";
 import { useEstadoNegocio } from "./EstadoNegocio";
-import { BurgerGlyph, FriesGlyph } from "./icons";
+import { AmpliarIcon, BurgerGlyph, FriesGlyph } from "./icons";
 import { Precio } from "./Precio";
+import { VisorFoto } from "./VisorFoto";
 
 /**
  * Tarjeta de producto del panel "hueso".
@@ -14,6 +16,7 @@ import { Precio } from "./Precio";
 export function MenuCard({ item }: { item: MenuItem }) {
   const { abrirProducto } = useCartUI();
   const { puedePedir } = useEstadoNegocio();
+  const [viendoFoto, setViendoFoto] = useState(false);
 
   const agotado = !item.disponible;
   // Sin precio definido no se puede pedir (hoy: las bebidas)
@@ -27,9 +30,26 @@ export function MenuCard({ item }: { item: MenuItem }) {
   const foto = item.fotoUrl?.startsWith("/") ? item.fotoUrl : undefined;
   const Glyph = item.categoria === "Fries" ? FriesGlyph : BurgerGlyph;
 
+  /**
+   * La tarjeta se toca para ver la foto entera. Solo si hay foto entera de
+   * verdad: prometer una que no abre es peor que no ofrecerla.
+   */
+  const fotoCompleta = item.fotoCompletaUrl?.startsWith("/")
+    ? item.fotoCompletaUrl
+    : undefined;
+
   return (
     <article
-      className={`flex gap-4 border-b border-bone-line py-4.5 ${agotado ? "opacity-50" : ""}`}
+      // El toque abre la foto en cualquier parte de la tarjeta, no solo en la
+      // miniatura, que a 78 px es un blanco chico para un pulgar. Los dos
+      // botones de adentro cortan la propagación para que sigan haciendo lo
+      // suyo.
+      onClick={fotoCompleta ? () => setViendoFoto(true) : undefined}
+      className={[
+        "flex gap-4 border-b border-bone-line py-4.5",
+        agotado ? "opacity-50" : "",
+        fotoCompleta ? "cursor-zoom-in" : "",
+      ].join(" ")}
     >
       <div className="relative flex size-[78px] shrink-0 items-center justify-center overflow-hidden rounded-card bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)] sm:size-24">
         {foto ? (
@@ -42,6 +62,23 @@ export function MenuCard({ item }: { item: MenuItem }) {
           />
         ) : (
           <Glyph className="size-14" apagado={agotado} />
+        )}
+
+        {/* La señal de que hay foto grande. Además de decirlo, es el punto de
+            entrada por teclado y el que anuncia el lector de pantalla: el
+            `onClick` del article no es alcanzable sin mouse ni dedo. */}
+        {fotoCompleta && (
+          <button
+            type="button"
+            aria-label={`Ver la foto de ${item.nombre}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setViendoFoto(true);
+            }}
+            className="absolute right-1 bottom-1 grid size-5.5 place-items-center rounded-full bg-bone/92 text-bone-ink shadow-sm transition-colors hover:bg-bone sm:right-1.5 sm:bottom-1.5 sm:size-6"
+          >
+            <AmpliarIcon className="size-3 sm:size-3.5" />
+          </button>
         )}
       </div>
 
@@ -80,7 +117,10 @@ export function MenuCard({ item }: { item: MenuItem }) {
         <button
           type="button"
           disabled={deshabilitado}
-          onClick={() => abrirProducto(item)}
+          onClick={(e) => {
+            e.stopPropagation();
+            abrirProducto(item);
+          }}
           className={[
             "rounded-full px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white",
             "transition-transform duration-75 active:scale-94",
@@ -92,6 +132,14 @@ export function MenuCard({ item }: { item: MenuItem }) {
           {agotado ? "Agotado" : "Agregar +"}
         </button>
       </div>
+
+      {viendoFoto && fotoCompleta && (
+        <VisorFoto
+          src={fotoCompleta}
+          nombre={item.nombre}
+          onClose={() => setViendoFoto(false)}
+        />
+      )}
     </article>
   );
 }

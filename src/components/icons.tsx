@@ -94,6 +94,27 @@ export function MapPinIcon({ className }: { className?: string }) {
   );
 }
 
+/**
+ * Cuatro esquinas abriéndose: el gesto universal de "esto se ve más grande".
+ * Va sobre la miniatura del menú para avisar que la tarjeta abre la foto.
+ */
+export function AmpliarIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M9 3H3v6M15 3h6v6M9 21H3v-6M15 21h6v-6" />
+    </svg>
+  );
+}
+
 export function CartIcon({ className }: { className?: string }) {
   return (
     <svg

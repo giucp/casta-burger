@@ -11,6 +11,7 @@ type FilaMenu = {
   precio_suelto: string | number | null;
   categoria: string;
   foto_url: string | null;
+  foto_completa_url: string | null;
   disponible: boolean;
   orden: number;
   tags: string[] | null;
@@ -37,6 +38,7 @@ function aMenuItem(f: FilaMenu): MenuItem {
     precioSuelto: suelto ?? undefined,
     categoria: f.categoria as Categoria,
     fotoUrl: f.foto_url ?? undefined,
+    fotoCompletaUrl: f.foto_completa_url ?? undefined,
     disponible: f.disponible,
     orden: f.orden,
     tags: f.tags ?? [],
@@ -54,7 +56,7 @@ export async function obtenerMenu(): Promise<MenuItem[]> {
   const { data, error } = await supabase
     .from("menu_items")
     .select(
-      "id, slug, nombre, descripcion, precio, precio_suelto, categoria, foto_url, disponible, orden, tags",
+      "id, slug, nombre, descripcion, precio, precio_suelto, categoria, foto_url, foto_completa_url, disponible, orden, tags",
     )
     .order("categoria")
     .order("orden");

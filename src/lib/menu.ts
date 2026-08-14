@@ -31,7 +31,14 @@ export type MenuItem = {
   /** Solo en promos: lo que costaría comprando cada cosa suelta. */
   precioSuelto?: number;
   categoria: Categoria;
+  /** Miniatura cuadrada de la tarjeta. */
   fotoUrl?: string;
+  /**
+   * La foto entera, sin el recorte cuadrado, para verla en grande al tocar la
+   * tarjeta. Puede faltar aunque haya miniatura: si falta, la tarjeta no se
+   * ofrece como tocable, que es mejor que prometer una foto que no abre.
+   */
+  fotoCompletaUrl?: string;
   disponible: boolean;
   orden: number;
   tags: string[];

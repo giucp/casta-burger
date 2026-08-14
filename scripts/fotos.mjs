@@ -3,25 +3,29 @@
  *
  *     node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
  *
- * Escribe `public/productos/<slug>.webp`. El slug es el de `menu_items`, y hay
- * que dejarlo escrito en la base con una migración: la web busca la foto por
- * `menu_items.foto_url`, no por el nombre del archivo.
+ * Escribe DOS archivos, porque la foto se ve en dos lados y no sirve la misma:
  *
- * Qué hace y por qué:
+ * - `public/productos/<slug>.webp` — cuadrada, 720 px. Es la miniatura de la
+ *   tarjeta del menú, que la muestra en un cuadro de 96 px con `object-cover`.
+ *   Si el archivo no fuera cuadrado el navegador recortaría igual, pero a
+ *   ciegas: mejor decidir el recorte acá y poder verlo.
  *
- * - **Recorta cuadrado.** La tarjeta del menú muestra la foto en un cuadro y
- *   con `object-cover`, así que si el archivo no es cuadrado el navegador
- *   recorta igual, pero a ciegas. Mejor decidirlo acá y ver el resultado.
+ * - `public/productos/<slug>-completa.webp` — la foto entera, sin recortar, con
+ *   el lado largo en 1280 px. Es la que se abre al tocar la tarjeta. Acá va
+ *   completa a propósito: es la toma del fotógrafo, vertical y con el reflejo,
+ *   y es justamente lo que el recorte cuadrado se come.
  *
- * - **Elige el encuadre solo** (`attention` de sharp): busca la zona con más
- *   información y centra ahí. Las fotos del fotógrafo son verticales, con el
- *   producto arriba y el reflejo abajo; un recorte al centro pelado le come la
- *   corona del pan o deja medio cuadro de reflejo.
+ * El encuadre del recorte lo elige sharp (`attention`): busca la zona con más
+ * información y centra ahí. Un recorte al centro pelado le come la corona del
+ * pan o deja medio cuadro de reflejo.
  *
- * - **Pasa a WebP.** Los originales son PNG de 1,5–2 MB. En WebP quedan en
- *   ~50 KB sin que se note la diferencia a este tamaño. El PNG guarda pixel por
- *   pixel, que sirve para un logo con bordes limpios y es un desperdicio para
- *   una foto.
+ * Todo sale en WebP. Los originales son PNG de 1,5–2 MB; el PNG guarda pixel
+ * por pixel, que sirve para un logo con bordes limpios y es un desperdicio para
+ * una foto. En WebP quedan en ~50 KB la miniatura y ~150 KB la completa.
+ *
+ * Los slugs son los de `menu_items`, y hay que dejar las dos rutas escritas en
+ * la base con una migración: la web las busca por `menu_items.foto_url` y
+ * `foto_completa_url`, no por el nombre del archivo.
  *
  * Los originales no van al repo: son el material del fotógrafo y pesan 40 veces
  * más que lo que la web necesita.
@@ -31,11 +35,17 @@ import { basename, join } from "node:path";
 import sharp from "sharp";
 
 /**
- * 720 px de lado. La tarjeta la muestra a 96 px, así que sobra incluso en un
- * teléfono de pantalla densa; el margen es para el día que la foto se quiera
- * ver más grande sin volver a pedirle los archivos al fotógrafo.
+ * 720 px de lado para la miniatura. La tarjeta la muestra a 96 px, así que
+ * sobra incluso en un teléfono de pantalla densa.
  */
 const LADO = 720;
+
+/**
+ * 1280 px el lado largo de la completa. Un teléfono la muestra a unos 400 px de
+ * alto; por 3 de densidad de pantalla, 1280 le deja margen y no la deja verse
+ * blanda en un iPhone.
+ */
+const LARGO = 1280;
 
 /** 82 es donde el WebP deja de ganar peso y todavía no pierde nada a la vista. */
 const CALIDAD = 82;
@@ -62,22 +72,37 @@ if (!/^[a-z0-9-]+$/.test(slug)) {
 
 await mkdir(DESTINO, { recursive: true });
 
-const salida = join(DESTINO, `${slug}.webp`);
-
-const info = await sharp(origen)
+const miniatura = await sharp(origen)
   .resize(LADO, LADO, { fit: "cover", position: sharp.strategy.attention })
   .webp({ quality: CALIDAD })
-  .toFile(salida);
+  .toFile(join(DESTINO, `${slug}.webp`));
+
+/**
+ * `fit: inside` respeta la proporción y no agranda si la foto ya es más chica
+ * (`withoutEnlargement`): estirar una foto no le agrega detalle, solo peso.
+ */
+const completa = await sharp(origen)
+  .resize(LARGO, LARGO, { fit: "inside", withoutEnlargement: true })
+  .webp({ quality: CALIDAD })
+  .toFile(join(DESTINO, `${slug}-completa.webp`));
 
 const kb = (n) => `${Math.round(n / 1024)} KB`;
 // El peso del original sale del disco: `sharp().metadata()` no lo trae cuando
 // la entrada es un archivo.
 const { size: original } = await stat(origen);
 
+console.log(`${basename(origen)}  (${kb(original)})`);
 console.log(
-  `${basename(origen)} → public/productos/${slug}.webp` +
-    `  (${kb(original)} → ${kb(info.size)}, ${info.width}×${info.height})`,
+  `  → productos/${slug}.webp` +
+    `           ${miniatura.width}×${miniatura.height}, ${kb(miniatura.size)}`,
 );
 console.log(
-  `Falta que la base lo sepa:  update menu_items set foto_url = '/productos/${slug}.webp' where slug = '${slug}';`,
+  `  → productos/${slug}-completa.webp` +
+    `  ${completa.width}×${completa.height}, ${kb(completa.size)}`,
+);
+console.log(
+  `\nFalta que la base lo sepa:\n` +
+    `  update menu_items set foto_url = '/productos/${slug}.webp',\n` +
+    `                        foto_completa_url = '/productos/${slug}-completa.webp'\n` +
+    `   where slug = '${slug}';`,
 );
