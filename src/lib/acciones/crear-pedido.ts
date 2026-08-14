@@ -1,6 +1,7 @@
 "use server";
 
 import { waitUntil } from "@vercel/functions";
+import { estadoNegocio } from "@/lib/horario";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarPedidoTelegram } from "@/lib/telegram";
 import type { Proteina } from "@/lib/menu";
@@ -55,6 +56,25 @@ export async function crearPedido(
   datos: DatosEntrada,
   lineas: LineaEntrada[],
 ): Promise<ResultadoPedido> {
+  /**
+   * ---- ¿estamos abiertos? ----
+   *
+   * Va antes que todo lo demás y en el servidor porque la interfaz no alcanza:
+   * el cliente que dejó el carrito abierto a las 10:58 lo confirma a las 11:05,
+   * el que tiene la página cacheada la abre con los botones prendidos, y
+   * cualquiera puede llamar a esta acción por su cuenta. Un pedido que entra
+   * con la cocina apagada no lo ve nadie hasta el día siguiente.
+   *
+   * Se mira `puedePedir` y no `abierto` para que MODO_DEMO siga siendo un solo
+   * interruptor: en demo, el servidor también deja pasar.
+   */
+  const estado = estadoNegocio();
+  if (!estado.puedePedir)
+    return {
+      ok: false,
+      error: `Ahora estamos cerrados. ${estado.proximaApertura}.`,
+    };
+
   // ---- validación de forma ----
   if (lineas.length === 0) return { ok: false, error: "El pedido está vacío." };
   if (lineas.length > MAX_LINEAS)

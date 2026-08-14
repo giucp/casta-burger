@@ -1,9 +1,9 @@
 import Image from "next/image";
 import { BUSINESS, HORARIO } from "@/lib/config";
-import type { EstadoNegocio } from "@/lib/horario";
+import { AvisoApertura } from "./AvisoApertura";
 import { Stamp } from "./Stamp";
 
-export function Hero({ estado }: { estado: EstadoNegocio }) {
+export function Hero() {
   return (
     <section className="relative overflow-hidden border-b border-white/8">
       {/* Pieza real de la identidad de la marca, del pliego del diseñador.
@@ -40,11 +40,7 @@ export function Hero({ estado }: { estado: EstadoNegocio }) {
           la casa. Pide por acá y recógela — o te la llevamos.
         </p>
 
-        {!estado.abierto && estado.proximaApertura && (
-          <p className="mb-5.5 font-mono text-[13px] text-smoke">
-            {estado.proximaApertura}.
-          </p>
-        )}
+        <AvisoApertura />
 
         <div className="flex flex-wrap gap-3">
           <a

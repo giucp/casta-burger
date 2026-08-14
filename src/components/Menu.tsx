@@ -34,13 +34,7 @@ function SecHead({ titulo, nota }: { titulo: string; nota?: string }) {
   );
 }
 
-export function Menu({
-  items,
-  puedePedir,
-}: {
-  items: MenuItem[];
-  puedePedir: boolean;
-}) {
+export function Menu({ items }: { items: MenuItem[] }) {
   const burgers = porCategoria(items, "Burgers");
   const fries = porCategoria(items, "Fries");
   const extras = porCategoria(items, "Extras");
@@ -70,7 +64,7 @@ export function Menu({
               nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
             />
             {burgers.map((item) => (
-              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
+              <MenuCard key={item.id} item={item} />
             ))}
           </>
         )}
@@ -83,7 +77,7 @@ export function Menu({
               <SecHead titulo="Fries" nota="para acompañar" />
             </div>
             {fries.map((item) => (
-              <MenuCard key={item.id} item={item} puedePedir={puedePedir} />
+              <MenuCard key={item.id} item={item} />
             ))}
           </>
         )}
@@ -93,7 +87,7 @@ export function Menu({
             <div className="mt-9.5">
               <SecHead titulo="Extras" />
             </div>
-            <ListaPedible items={extras} puedePedir={puedePedir} />
+            <ListaPedible items={extras} />
           </>
         )}
 
@@ -102,7 +96,7 @@ export function Menu({
             <div className="mt-9.5" id="promos">
               <SecHead titulo="Promos" />
             </div>
-            <Promos items={promos} puedePedir={puedePedir} />
+            <Promos items={promos} />
           </>
         )}
 
@@ -111,7 +105,7 @@ export function Menu({
             <div className="mt-9.5">
               <SecHead titulo="Bebidas" />
             </div>
-            <ListaPedible items={bebidas} puedePedir={puedePedir} />
+            <ListaPedible items={bebidas} />
           </>
         )}
       </div>

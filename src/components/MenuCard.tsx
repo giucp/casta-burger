@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { MenuItem } from "@/lib/menu";
 import { useCartUI } from "./cart/CartUI";
+import { useEstadoNegocio } from "./EstadoNegocio";
 import { BurgerGlyph, FriesGlyph } from "./icons";
 import { Precio } from "./Precio";
 
@@ -10,14 +11,9 @@ import { Precio } from "./Precio";
  * Tarjeta de producto del panel "hueso".
  * Agotado = tarjeta atenuada y botón deshabilitado (§3).
  */
-export function MenuCard({
-  item,
-  puedePedir,
-}: {
-  item: MenuItem;
-  puedePedir: boolean;
-}) {
+export function MenuCard({ item }: { item: MenuItem }) {
   const { abrirProducto } = useCartUI();
+  const { puedePedir } = useEstadoNegocio();
 
   const agotado = !item.disponible;
   // Sin precio definido no se puede pedir (hoy: las bebidas)

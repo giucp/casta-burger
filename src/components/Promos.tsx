@@ -3,6 +3,7 @@
 import { usd } from "@/lib/format";
 import type { MenuItem } from "@/lib/menu";
 import { useCartUI } from "./cart/CartUI";
+import { useEstadoNegocio } from "./EstadoNegocio";
 
 /**
  * Promos, dentro del panel hueso del menú.
@@ -12,14 +13,9 @@ import { useCartUI } from "./cart/CartUI";
  * distinto es cómo se ven: tarjetas con borde rojo, para que salten sobre las
  * listas planas de Extras y Bebidas.
  */
-export function Promos({
-  items,
-  puedePedir,
-}: {
-  items: MenuItem[];
-  puedePedir: boolean;
-}) {
+export function Promos({ items }: { items: MenuItem[] }) {
   const { abrirProducto } = useCartUI();
+  const { puedePedir } = useEstadoNegocio();
 
   if (items.length === 0) return null;
 

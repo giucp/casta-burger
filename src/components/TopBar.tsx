@@ -1,16 +1,17 @@
 "use client";
 
 import { BUSINESS, HORARIO } from "@/lib/config";
-import type { EstadoNegocio } from "@/lib/horario";
 import { useCart } from "./cart/CartProvider";
 import { useCartUI } from "./cart/CartUI";
+import { useEstadoNegocio } from "./EstadoNegocio";
 import { Stamp } from "./Stamp";
 import { CartIcon } from "./icons";
 import { LogoMarca } from "./LogoMarca";
 
-export function TopBar({ estado }: { estado: EstadoNegocio }) {
+export function TopBar() {
   const { cantidad } = useCart();
   const { abrirCarrito } = useCartUI();
+  const estado = useEstadoNegocio();
 
   return (
     <header className="sticky top-0 z-40 border-b border-white/8 bg-ink/86 backdrop-blur-[10px]">

@@ -3,6 +3,7 @@
 import { usd } from "@/lib/format";
 import type { MenuItem } from "@/lib/menu";
 import { useCart } from "./cart/CartProvider";
+import { useEstadoNegocio } from "./EstadoNegocio";
 
 /**
  * Lista a dos columnas para Extras y Bebidas.
@@ -11,14 +12,9 @@ import { useCart } from "./cart/CartProvider";
  * abrir el selector: para una Coca-Cola, un panel con "cantidad" es una vuelta
  * de más. Si el cliente quiere dos, toca dos veces o lo ajusta en el carrito.
  */
-export function ListaPedible({
-  items,
-  puedePedir,
-}: {
-  items: MenuItem[];
-  puedePedir: boolean;
-}) {
+export function ListaPedible({ items }: { items: MenuItem[] }) {
   const { agregar } = useCart();
+  const { puedePedir } = useEstadoNegocio();
 
   return (
     <ul className="mt-2 grid gap-x-5 gap-y-1 sm:grid-cols-2">

@@ -7,6 +7,7 @@ import { linkWhatsApp, mensajePedido, type TipoPedido } from "@/lib/whatsapp";
 import { crearPedido } from "@/lib/acciones/crear-pedido";
 import { guardarSuscripcion } from "@/lib/acciones/suscribir";
 import { soportaPush, suscribirCliente } from "@/lib/push-cliente";
+import { useEstadoNegocio } from "../EstadoNegocio";
 import { useCart } from "./CartProvider";
 import { Sheet } from "./Sheet";
 
@@ -81,6 +82,7 @@ function leerClienteGuardado(): {
 
 export function CartPanel({ onClose }: { onClose: () => void }) {
   const { lineas, subtotal, cambiarCantidad, quitar, vaciar } = useCart();
+  const estado = useEstadoNegocio();
 
   const recordado = leerClienteGuardado();
   const [tipo, setTipo] = useState<TipoPedido>("retiro");
@@ -131,6 +133,9 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     setIntentado(true);
     setFallo(null);
     if (incompleto || lineas.length === 0 || guardando) return;
+    // El servidor lo vuelve a verificar; esto solo evita el viaje en vano si el
+    // reloj cruzó la hora de cierre con el panel abierto.
+    if (!estado.puedePedir) return;
 
     const ubicacionUrl = ubicacion
       ? `https://maps.google.com/?q=${ubicacion.lat.toFixed(6)},${ubicacion.lng.toFixed(6)}`
@@ -304,29 +309,42 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
       titulo="Tu pedido"
       onClose={onClose}
       pie={
-        <>
-          {intentado && incompleto && (
-            <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.06em] text-casta">
-              Completá los datos marcados
-            </p>
-          )}
-          {fallo && (
-            <p className="mb-2 font-mono text-[11px] text-casta">{fallo}</p>
-          )}
-          <button
-            type="button"
-            onClick={confirmar}
-            disabled={guardando}
-            className="flex w-full items-center justify-center gap-3 rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep disabled:opacity-60"
-          >
-            {guardando ? "Enviando…" : "Confirmar pedido"}
-            {!guardando && (
-              <span className="font-mono text-base font-bold">
-                {usd(subtotal)}
-              </span>
+        estado.puedePedir ? (
+          <>
+            {intentado && incompleto && (
+              <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.06em] text-casta">
+                Completá los datos marcados
+              </p>
             )}
-          </button>
-        </>
+            {fallo && (
+              <p className="mb-2 font-mono text-[11px] text-casta">{fallo}</p>
+            )}
+            <button
+              type="button"
+              onClick={confirmar}
+              disabled={guardando}
+              className="flex w-full items-center justify-center gap-3 rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep disabled:opacity-60"
+            >
+              {guardando ? "Enviando…" : "Confirmar pedido"}
+              {!guardando && (
+                <span className="font-mono text-base font-bold">
+                  {usd(subtotal)}
+                </span>
+              )}
+            </button>
+          </>
+        ) : (
+          /* Cerró mientras el panel estaba abierto. El pedido no se borra: el
+             carrito sobrevive en el teléfono y sigue ahí cuando abramos. */
+          <div className="rounded-full border border-bone-line px-6 py-3.5 text-center">
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.08em] text-bone-mute">
+              Cerrado
+            </p>
+            <p className="mt-1 font-mono text-[11px] text-bone-mute">
+              {estado.proximaApertura}. Tu pedido queda guardado acá.
+            </p>
+          </div>
+        )
       }
     >
       <ul className="mb-6">

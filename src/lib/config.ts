@@ -40,14 +40,16 @@ export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
 /**
  * Modo demo: la web se ve y se usa completa aunque el local esté cerrado.
  *
- * El §5 del brief pide deshabilitar los botones "Agregar" fuera de horario, y
- * es lo correcto en producción. Pero mientras se muestra el diseño hace falta
- * poder recorrer el flujo entero un martes a las 3 PM.
+ * En `false` (producción) manda el §5 del brief: fuera de horario los botones
+ * "Agregar" quedan deshabilitados, la barra inferior avisa cuándo abrimos y el
+ * servidor rechaza cualquier pedido que igual llegue. El sello Abierto/Cerrado
+ * dice la verdad en los dos modos.
  *
- * IMPORTANTE: PONER EN `false` ANTES DE SALIR A PRODUCCIÓN. Con eso solo, vuelve el
- * comportamiento del brief: fuera de horario no se puede pedir.
+ * Se puso en `false` el 14 de agosto de 2026, al empezar a operar de verdad.
+ * Solo tiene sentido volver a `true` para mostrar el flujo completo un martes a
+ * las 3 PM, y hay que acordarse de devolverlo.
  */
-export const MODO_DEMO = true;
+export const MODO_DEMO = false;
 
 /**
  * Horario de atención: jueves a domingo, 6:00–11:00 PM (hora de Caracas).

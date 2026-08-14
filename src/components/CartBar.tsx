@@ -1,16 +1,17 @@
 "use client";
 
 import { usd } from "@/lib/format";
-import type { EstadoNegocio } from "@/lib/horario";
 import { useCart } from "./cart/CartProvider";
 import { useCartUI } from "./cart/CartUI";
+import { useEstadoNegocio } from "./EstadoNegocio";
 
 /**
  * Carrito fijo inferior (§3). Barra roja con conteo y total en USD.
  */
-export function CartBar({ estado }: { estado: EstadoNegocio }) {
+export function CartBar() {
   const { cantidad, subtotal } = useCart();
   const { abrirCarrito } = useCartUI();
+  const estado = useEstadoNegocio();
 
   if (!estado.puedePedir) {
     return (
