@@ -39,6 +39,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0009_quitar_combo.sql` | Fuera la categoría Combo (era la promo 3 Cheese) |
 | `0010_push_suscripciones.sql` | Tabla de suscripciones a avisos push del cliente |
 | `0011_papas_seccion_propia.sql` | Las papas salen de Extras a su propia sección, Fries |
+| `0012_fotos_reales.sql` | Las cuatro tarjetas con foto propia apuntan a la foto real |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -81,6 +82,8 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] PWA instalable: ícono y nombre propios, se agrega a la pantalla de inicio
 - [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
 - [x] Tarjeta de compartir: al pegar el link en WhatsApp sale la marca, no un cuadro vacío
+- [x] Horario de verdad: fuera de jue–dom 6–11 PM no se puede pedir, la web se
+      abre y se cierra sola a la hora y el servidor rechaza lo que igual llegue
 
 ## Las piezas de la marca
 
@@ -94,6 +97,25 @@ node scripts/marca-a-svg.mjs "ruta/ELEMENTOS CASTA.eps" marca-svg/
 Escribe una pieza por archivo: el logotipo con manos, el rótulo CASTA, la
 plancha, la C sola y el CASTA con corona. De ahí salieron los dos trazos de la
 C que repite [`CintaMarca`](src/components/CintaMarca.tsx).
+
+## Las fotos de los productos
+
+Van en [`public/productos/`](public/productos), y la base las encuentra por
+`menu_items.foto_url` (ej: `/productos/casta-burger.webp`). Tiene que ser una
+ruta del sitio: una URL de otro dominio la rechaza `next/image` en runtime y
+tumba la página.
+
+Para preparar una foto nueva:
+
+```bash
+node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
+```
+
+Recorta cuadrado —eligiendo el encuadre solo, que las fotos son verticales y
+un recorte al centro le come el pan— y pasa a WebP de 720 px. Los originales
+del fotógrafo (PNG de 1,5–2 MB) quedan en ~50 KB y **no van al repo**. Después
+hay que dejarlo escrito en la base con un `update`, como
+[`0012_fotos_reales.sql`](supabase/migrations/0012_fotos_reales.sql).
 
 ## La imagen de compartir
 
@@ -116,34 +138,44 @@ que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
 - **"3 Cheese Burger" estaba duplicado** como Combo y como Promo, al mismo
   precio. Quedó solo en Promos, que además muestra el ahorro. El Combo está
   oculto, no borrado.
-- **Fotos de producto**: hoy son placeholders monolínea. La tarjeta ya sabe
-  mostrar la foto real: se pone el archivo en `public/productos/` y se guarda
-  esa ruta en `menu_items.foto_url` (ej: `/productos/papas.jpg`). Tiene que ser
-  una ruta del sitio, no una URL de otro dominio.
+- **Fotos de producto**: ya están las cuatro con foto propia (Cheese Burger,
+  Casta Burger, Casta Smash y Servicio de papas). Las bebidas y los extras van
+  en listas planas, sin foto, así que no les hace falta.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
   se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
 
+## El horario
+
+Jue–dom, 6:00–11:00 PM, siempre contra `America/Caracas`: ni la zona del
+servidor ni la del visitante lo mueven. Fuera de ese rango los botones
+"Agregar" quedan deshabilitados y la barra inferior dice cuándo abrimos.
+
+Son tres capas, y las tres hacen falta:
+
+1. **El servidor** calcula el estado al pintar la página.
+2. **El navegador** lo recalcula cada 15 s, y también al volver a la pestaña.
+   Sin esto, quien dejara la web abierta cruzando las 6:00 o las 11:00 PM
+   seguiría viendo el estado viejo — y podría pedir con la cocina apagada.
+3. **`crearPedido` lo verifica de nuevo** antes de tocar la base. Es la única
+   capa que de verdad cierra la puerta: la interfaz se puede tener cacheada,
+   congelada en una pestaña vieja o directamente saltar.
+
+`MODO_DEMO` en [`src/lib/config.ts`](src/lib/config.ts) es el interruptor que
+apaga las tres a la vez, para poder mostrar el flujo completo un martes a las
+3 PM. Está en `false` desde que el negocio opera de verdad.
+
 ## Antes de que el negocio dependa de esto
 
-La web ya está publicada, pero **todavía no está lista para operar de verdad**.
-Falta lo de arriba sin marcar, y además:
+La web ya está publicada. Falta lo de arriba sin marcar, y además:
 
-**1. Poner `MODO_DEMO = false`** en [`src/lib/config.ts`](src/lib/config.ts).
-
-Mientras está en `true`, la web deja pedir aunque el local esté cerrado, para
-poder mostrar el diseño funcionando a cualquier hora. En `false` vuelve el
-comportamiento del §5 del brief: fuera de horario los botones "Agregar" se
-deshabilitan y la barra inferior avisa cuándo abrimos. El sello Abierto/Cerrado
-dice la verdad siempre, en los dos modos.
-
-**2. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
+**1. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
 proyecto de Supabase, Vercel y dominio. Incluye cambiar `VAPID_SUBJECT` en las
 variables de Vercel al correo del negocio (hoy tiene el del desarrollador; es
 solo el contacto técnico que exige el estándar de push, no lo ve el cliente).
 Si además se estrena dominio propio, hay que agregar `NEXT_PUBLIC_SITE_URL` con
 la dirección nueva, o la imagen de compartir sigue apuntando a `.vercel.app`.
 
-**3. Configurar el aviso a la cocina por Telegram** (pendiente): crear el bot
+**2. Configurar el aviso a la cocina por Telegram** (pendiente): crear el bot
 con @BotFather y cargar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel.
 
 ## Decisiones tomadas
