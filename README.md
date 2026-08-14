@@ -42,6 +42,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0012_fotos_reales.sql` | Las cuatro tarjetas con foto propia apuntan a la foto real |
 | `0013_foto_completa.sql` | Columna `foto_completa_url`: la foto entera, para verla en grande |
 | `0014_fotos_promos.sql` | Las tres promos con su foto, en recorte ancho |
+| `0015_admins_de_verdad.sql` | Lista de admins: el RLS pregunta *quién* entra, no solo si entró |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -170,6 +171,34 @@ que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
   en listas planas, sin foto, así que no les hace falta.
 - **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
   se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
+
+## Quién entra al back-office
+
+La lista vive en la tabla `admins` y se edita desde
+[`/admin/equipo`](https://casta-burger.vercel.app/admin/equipo). Agregar a
+alguien hace dos cosas: lo suma a la lista y le crea la cuenta, porque el
+formulario de acceso **ya no da de alta a nadie**.
+
+Son tres cierres, y el que importa es el último:
+
+1. El middleware pregunta `es_admin()` antes de dejar ver `/admin`.
+2. El layout del panel lo vuelve a preguntar.
+3. **El RLS de la base lo pregunta en cada consulta.** Esta es la frontera de
+   verdad: sin estar en `admins` no se lee ni se escribe nada, ni entrando al
+   panel ni pegándole directo a la API de Supabase.
+
+Antes de esto, todas las políticas decían `to authenticated using (true)` y el
+formulario de acceso le creaba cuenta a cualquier correo. Sumadas, las dos
+cosas significaban que cualquiera podía darse de alta y quedarse con lectura y
+escritura completa sobre los pedidos —con nombre, teléfono y dirección de cada
+cliente—, el menú, el inventario y las compras.
+
+**Si alguien queda afuera**, el SQL Editor de Supabase corre con la llave
+secreta y se salta el RLS, así que desde ahí siempre se puede reabrir:
+
+```sql
+insert into admins (email) values ('elcorreo@ejemplo.com') on conflict (email) do nothing;
+```
 
 ## El horario
 

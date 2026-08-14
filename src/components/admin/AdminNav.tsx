@@ -9,6 +9,7 @@ const SECCIONES = [
   { href: "/admin/menu", label: "Menú" },
   { href: "/admin/inventario", label: "Inventario" },
   { href: "/admin/compras", label: "Compras" },
+  { href: "/admin/equipo", label: "Equipo" },
 ];
 
 export function AdminNav() {

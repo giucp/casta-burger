@@ -7,9 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 /** Qué salió mal al volver del correo, en cristiano. */
 const MOTIVOS: Record<string, string> = {
   "sin-codigo":
-    "El enlace llegó sin datos de acceso. Pedí uno nuevo y abrilo tocándolo, sin copiarlo a mano.",
+    "El enlace llegó sin datos de acceso, o ya se había usado. Pedí UNO solo, abrí el correo más reciente y tocá el enlace desde este mismo navegador.",
   "enlace-invalido":
-    "El enlace ya se usó o venció. Los enlaces duran un rato corto: pedí uno nuevo.",
+    "El enlace ya se usó o venció. Ojo: pedir uno nuevo invalida el anterior, así que sirve el del último correo.",
+  "sin-permiso":
+    "Esa cuenta no tiene acceso al panel. Pedile a alguien del equipo que te sume desde Equipo.",
 };
 
 export function LoginForm() {
@@ -39,10 +41,27 @@ export function LoginForm() {
       email: correo.trim(),
       options: {
         emailRedirectTo: `${window.location.origin}/admin/auth/callback`,
+        /**
+         * Sin esto, Supabase le CREA la cuenta a cualquier correo que se
+         * escriba acá y le manda un enlace que funciona. Es el valor por
+         * defecto, y era la mitad del agujero: la otra mitad eran las
+         * políticas de la base, que solo pedían tener sesión.
+         *
+         * Las cuentas ahora se crean al sumar a alguien desde /admin/equipo,
+         * no acá.
+         */
+        shouldCreateUser: false,
       },
     });
 
-    if (error) {
+    /**
+     * Con `shouldCreateUser: false`, Supabase devuelve error cuando el correo
+     * no tiene cuenta. No se muestra tal cual a propósito: sería un detector
+     * de correos válidos para cualquiera que pruebe uno por uno. Se responde
+     * lo mismo que si hubiera salido bien, y el que tiene acceso recibe su
+     * enlace igual.
+     */
+    if (error && !/not.*(found|allowed)|signups/i.test(error.message)) {
       setError(error.message);
       setEstado("idle");
       return;
@@ -58,8 +77,12 @@ export function LoginForm() {
           Revisá tu correo
         </p>
         <p className="text-sm text-ash">
-          Le mandamos un enlace a <b>{correo}</b>. Tocalo desde este mismo
-          dispositivo y entrás directo.
+          Si <b>{correo}</b> tiene acceso, le acaba de llegar un enlace. Tocalo
+          desde este mismo dispositivo y entrás directo.
+        </p>
+        <p className="mt-2 font-mono text-[11px] text-smoke">
+          No pidas otro enlace sin usar este: cada pedido nuevo invalida el
+          anterior.
         </p>
         <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-smoke">
           Si no llega, mirá en spam
@@ -70,6 +93,22 @@ export function LoginForm() {
 
   return (
     <form onSubmit={enviar}>
+      {/* Quien llegó acá rebotado por falta de permiso sigue con la sesión
+          puesta. Sin esta salida quedaría intentando con la misma cuenta que
+          acaba de ser rechazada, sin entender por qué. */}
+      {motivo === "sin-permiso" && (
+        <button
+          type="button"
+          onClick={async () => {
+            await createClient().auth.signOut();
+            window.location.href = "/admin/login";
+          }}
+          className="mb-4 w-full rounded-full border border-white/15 py-3 font-mono text-[11px] uppercase tracking-[0.12em] text-smoke transition-colors hover:border-white/40 hover:text-white"
+        >
+          Salir de esa cuenta
+        </button>
+      )}
+
       <label
         htmlFor="correo"
         className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.16em] text-smoke"

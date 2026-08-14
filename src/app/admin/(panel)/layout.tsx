@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LogoMarca } from "@/components/LogoMarca";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BotonSalir } from "@/components/admin/BotonSalir";
@@ -7,10 +8,15 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Shell del back-office.
  *
- * El middleware ya bloquea /admin sin sesión; acá se vuelve a comprobar contra
- * el servidor de Auth. No es redundancia inútil: el middleware valida la firma
- * del token, y `getUser()` confirma además que la cuenta siga existiendo y no
- * haya sido revocada.
+ * El middleware ya filtró, y acá se vuelve a comprobar. No es redundancia
+ * inútil: son tres cosas distintas.
+ *
+ * - `getUser()` confirma contra el servidor de Auth que la cuenta siga
+ *   existiendo y no haya sido revocada.
+ * - `es_admin()` confirma que además esté en la lista de admins.
+ * - Y por debajo de todo, el RLS de la base vuelve a preguntar lo mismo en
+ *   cada consulta. Esa es la frontera que de verdad importa: si alguien se
+ *   saltara estas dos, seguiría sin poder leer ni escribir nada.
  */
 export default async function AdminLayout({
   children,
@@ -21,6 +27,9 @@ export default async function AdminLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  const { data: autorizado } = await supabase.rpc("es_admin");
+  if (!user || autorizado !== true) redirect("/admin/login?error=sin-permiso");
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-ink">
