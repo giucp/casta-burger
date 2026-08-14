@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { Mantenimiento } from "@/components/Mantenimiento";
 import { Menu } from "@/components/Menu";
+import { PrecargarFotos } from "@/components/PrecargarFotos";
 import { TopBar } from "@/components/TopBar";
 import { MANTENIMIENTO } from "@/lib/config";
 import { estadoNegocio } from "@/lib/horario";
@@ -33,6 +34,12 @@ export default async function Home() {
   const menu = await obtenerMenu();
   const extras = porCategoria(menu, "Extras");
 
+  // Las fotos grandes que existen hoy, para irlas bajando en segundo plano una
+  // vez que la web ya cargó.
+  const fotosGrandes = menu
+    .map((item) => item.fotoCompletaUrl)
+    .filter((url): url is string => Boolean(url?.startsWith("/")));
+
   return (
     <EstadoProvider inicial={estado}>
       <CartProvider>
@@ -52,6 +59,7 @@ export default async function Home() {
           {/* Reserva el alto de la barra fija para que no tape el footer */}
           <div aria-hidden className="h-21 shrink-0" />
           <CartBar />
+          <PrecargarFotos urls={fotosGrandes} />
         </CartUIProvider>
       </CartProvider>
     </EstadoProvider>

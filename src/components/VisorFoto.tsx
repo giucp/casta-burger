@@ -65,12 +65,18 @@ export function VisorFoto({
       <div className="pointer-events-none relative flex flex-col items-center gap-4">
         {/* Alto acotado por la pantalla, no por la foto: en un teléfono
             apaisado una vertical de 1280 px se saldría por abajo. */}
+        {/* `unoptimized` a propósito: el archivo ya sale del script con el
+            tamaño y la calidad justos, así que el optimizador de Next solo lo
+            volvería a comprimir. Y sobre todo, así la URL es el archivo pelado
+            —no un `/_next/image?url=…&w=…`— que es la misma que `PrecargarFotos`
+            deja lista en el caché. Si acá se optimizara, la precarga estaría
+            calentando una URL que esta foto nunca pide. */}
         <Image
           src={src}
           alt={nombre}
           width={1280}
           height={1280}
-          sizes="(min-width: 640px) 480px, 92vw"
+          unoptimized
           priority
           className="max-h-[72vh] w-auto max-w-full rounded-2xl object-contain"
         />

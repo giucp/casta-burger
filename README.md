@@ -129,6 +129,14 @@ repo**. Después hay que dejar las dos rutas escritas en la base con un
 Si un producto tiene miniatura pero no foto completa, la tarjeta simplemente no
 se ofrece como tocable. Es mejor eso que prometer una foto que no abre.
 
+Las fotos completas se van bajando solas en segundo plano
+([`PrecargarFotos`](src/components/PrecargarFotos.tsx)), pero recién cuando la
+web terminó de cargar y el navegador está ocioso, de a una por vez y **nunca**
+si el visitante pidió ahorrar datos o está en una conexión lenta. Por eso el
+visor las muestra `unoptimized`: así pide el archivo tal cual, que es la misma
+URL que quedó en el caché. Si pasara por el optimizador de Next, la precarga
+estaría calentando una URL que el visor nunca pide.
+
 ## La imagen de compartir
 
 Es [`public/og.jpg`](public/og.jpg), un archivo estático de 1200×630 que se
