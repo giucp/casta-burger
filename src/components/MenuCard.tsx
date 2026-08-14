@@ -39,6 +39,7 @@ export function MenuCard({ item }: { item: MenuItem }) {
     : undefined;
 
   return (
+    <>
     <article
       // El toque abre la foto en cualquier parte de la tarjeta, no solo en la
       // miniatura, que a 78 px es un blanco chico para un pulgar. Los dos
@@ -132,14 +133,20 @@ export function MenuCard({ item }: { item: MenuItem }) {
           {agotado ? "Agotado" : "Agregar +"}
         </button>
       </div>
-
-      {viendoFoto && fotoCompleta && (
-        <VisorFoto
-          src={fotoCompleta}
-          nombre={item.nombre}
-          onClose={() => setViendoFoto(false)}
-        />
-      )}
     </article>
+
+    {/* Hermano del article, NO hijo: React propaga los eventos por el árbol de
+        componentes, así que adentro cualquier toque para cerrar subía hasta el
+        `onClick` del article y volvía a abrir la foto en el mismo toque. En
+        escritorio no se notaba porque Escape no pasa por ahí; en un teléfono,
+        que no tiene Escape, la foto no había forma de cerrarla. */}
+    {viendoFoto && fotoCompleta && (
+      <VisorFoto
+        src={fotoCompleta}
+        nombre={item.nombre}
+        onClose={() => setViendoFoto(false)}
+      />
+    )}
+    </>
   );
 }
