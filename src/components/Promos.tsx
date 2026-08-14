@@ -76,9 +76,20 @@ export function Promos({ items }: { items: MenuItem[] }) {
                     src={foto}
                     alt={promo.nombre}
                     fill
-                    // En sm+ la grilla es de dos columnas, así que cada tarjeta
-                    // mide media pantalla.
-                    sizes="(min-width: 640px) 50vw, 100vw"
+                    /**
+                     * Las tres medidas salen del layout real: el panel del menú
+                     * está topado en 1080 px con 20 de aire a cada lado, y la
+                     * grilla se parte en dos columnas con 12 de separación, así
+                     * que de 1080 para arriba la tarjeta mide 510 y no crece
+                     * más.
+                     *
+                     * Decir solo "50vw" era mentirle al navegador en pantalla
+                     * grande: en un monitor ancho calculaba media pantalla, la
+                     * duplicaba por la densidad y terminaba pidiendo la foto en
+                     * 3840 px para mostrarla a 510. Bajaba de más y quemaba una
+                     * transformación de imagen de Vercel por cada medida.
+                     */
+                    sizes="(min-width: 1080px) 510px, (min-width: 640px) 50vw, 100vw"
                     className="object-cover"
                   />
 
