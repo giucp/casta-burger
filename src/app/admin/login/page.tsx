@@ -19,8 +19,8 @@ export default function LoginPage() {
           Entrar
         </h1>
         <p className="mb-6 text-sm text-smoke">
-          Te mandamos un enlace al correo. No hay contraseña que recordar ni que
-          se pueda filtrar.
+          Correo y contraseña. Sin enlaces por correo: entrar a la cocina no
+          puede depender de que llegue un mail.
         </p>
 
         {/* LoginForm lee ?volver= de la URL, y eso obliga a Next a resolverlo

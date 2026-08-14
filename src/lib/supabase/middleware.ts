@@ -1,8 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Rutas de /admin que se pueden ver sin sesión. */
-const PUBLICAS = ["/admin/login", "/admin/auth"];
+/**
+ * Rutas de /admin que se pueden ver sin sesión.
+ *
+ * Antes había también `/admin/auth`, donde aterrizaba el magic link. Ya no
+ * existe: se entra con contraseña, sin dar la vuelta por el correo.
+ */
+const PUBLICAS = ["/admin/login"];
 
 /**
  * Refresca la sesión en cada request y protege /admin (§6 del brief).

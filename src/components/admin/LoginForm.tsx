@@ -1,101 +1,74 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-/** Qué salió mal al volver del correo, en cristiano. */
+/** Qué pasó, en cristiano. */
 const MOTIVOS: Record<string, string> = {
-  "sin-codigo":
-    "El enlace llegó sin datos de acceso, o ya se había usado. Pedí UNO solo, abrí el correo más reciente y tocá el enlace desde este mismo navegador.",
-  "enlace-invalido":
-    "El enlace ya se usó o venció. Ojo: pedir uno nuevo invalida el anterior, así que sirve el del último correo.",
   "sin-permiso":
     "Esa cuenta no tiene acceso al panel. Pedile a alguien del equipo que te sume desde Equipo.",
 };
 
+/**
+ * Entrar al back-office con correo y contraseña.
+ *
+ * Antes esto era un magic link, y era la decisión equivocada para una cocina.
+ * El enlace mete al servicio de correo en el camino crítico: el plan gratis de
+ * Supabase manda 2 correos por hora, así que un viernes a las 8 PM, con el
+ * local lleno, perder la sesión significaba no poder entrar en una hora. La
+ * pantalla de cocina es el corazón del sistema; no puede depender de que llegue
+ * un mail.
+ *
+ * Con contraseña no hay nada externo de por medio. Y para el caso de olvidarla,
+ * la recuperación tampoco necesita correo: otro admin la cambia desde Equipo.
+ * Son dos personas que se ven todos los días.
+ */
 export function LoginForm() {
+  const router = useRouter();
   const params = useSearchParams();
   const volver = params.get("volver") ?? "/admin/cocina";
   const motivo = params.get("error");
 
   const [correo, setCorreo] = useState("");
-  const [estado, setEstado] = useState<"idle" | "enviando" | "enviado">("idle");
+  const [clave, setClave] = useState("");
+  const [entrando, setEntrando] = useState(false);
   const [error, setError] = useState<string | null>(
-    motivo ? (MOTIVOS[motivo] ?? "No se pudo entrar con ese enlace.") : null,
+    motivo ? (MOTIVOS[motivo] ?? "No se pudo entrar.") : null,
   );
 
-  const enviar = async (e: React.FormEvent) => {
+  const entrar = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setEstado("enviando");
-
-    // A dónde volver va en una cookie corta, no en la URL de retorno.
-    // Supabase compara la URL de retorno contra su lista de permitidas, y un
-    // query string variable hace ese emparejamiento frágil: si no coincide,
-    // manda al visitante a la Site URL sin avisar de nada.
-    document.cookie = `casta_volver=${encodeURIComponent(volver)}; Path=/; Max-Age=900; SameSite=Lax`;
+    setEntrando(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOtp({
-      email: correo.trim(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/admin/auth/callback`,
-        /**
-         * Sin esto, Supabase le CREA la cuenta a cualquier correo que se
-         * escriba acá y le manda un enlace que funciona. Es el valor por
-         * defecto, y era la mitad del agujero: la otra mitad eran las
-         * políticas de la base, que solo pedían tener sesión.
-         *
-         * Las cuentas ahora se crean al sumar a alguien desde /admin/equipo,
-         * no acá.
-         */
-        shouldCreateUser: false,
-      },
+    const { error } = await supabase.auth.signInWithPassword({
+      email: correo.trim().toLowerCase(),
+      password: clave,
     });
 
-    /**
-     * Con `shouldCreateUser: false`, Supabase devuelve error cuando el correo
-     * no tiene cuenta. No se muestra tal cual a propósito: sería un detector
-     * de correos válidos para cualquiera que pruebe uno por uno. Se responde
-     * lo mismo que si hubiera salido bien, y el que tiene acceso recibe su
-     * enlace igual.
-     */
-    if (error && !/not.*(found|allowed)|signups/i.test(error.message)) {
-      setError(error.message);
-      setEstado("idle");
+    if (error) {
+      /**
+       * El mismo mensaje para "no existe" que para "contraseña mala", a
+       * propósito: distinguirlos convertiría esta pantalla en un detector de
+       * correos con acceso para cualquiera que pruebe uno por uno.
+       */
+      setError("Correo o contraseña incorrectos.");
+      setEntrando(false);
       return;
     }
 
-    setEstado("enviado");
+    // `refresh()` para que el middleware vuelva a evaluar con la sesión nueva
+    // en vez de servir una versión cacheada.
+    router.replace(volver);
+    router.refresh();
   };
 
-  if (estado === "enviado") {
-    return (
-      <div className="rounded-card border border-emerald-500/30 bg-emerald-500/10 px-5 py-6">
-        <p className="mb-2 font-display text-2xl uppercase leading-tight text-emerald-400">
-          Revisá tu correo
-        </p>
-        <p className="text-sm text-ash">
-          Si <b>{correo}</b> tiene acceso, le acaba de llegar un enlace. Tocalo
-          desde este mismo dispositivo y entrás directo.
-        </p>
-        <p className="mt-2 font-mono text-[11px] text-smoke">
-          No pidas otro enlace sin usar este: cada pedido nuevo invalida el
-          anterior.
-        </p>
-        <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-smoke">
-          Si no llega, mirá en spam
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <form onSubmit={enviar}>
-      {/* Quien llegó acá rebotado por falta de permiso sigue con la sesión
-          puesta. Sin esta salida quedaría intentando con la misma cuenta que
-          acaba de ser rechazada, sin entender por qué. */}
+    <form onSubmit={entrar}>
+      {/* Quien llegó rebotado por falta de permiso sigue con la sesión puesta.
+          Sin esta salida quedaría intentando con la cuenta recién rechazada. */}
       {motivo === "sin-permiso" && (
         <button
           type="button"
@@ -113,17 +86,33 @@ export function LoginForm() {
         htmlFor="correo"
         className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.16em] text-smoke"
       >
-        Correo del dueño
+        Correo
       </label>
       <input
         id="correo"
         type="email"
         required
-        autoComplete="email"
+        autoComplete="username"
         value={correo}
         onChange={(e) => setCorreo(e.target.value)}
         placeholder="tucorreo@ejemplo.com"
         className="mb-3 w-full rounded-xl border border-white/15 bg-card px-3.5 py-3 text-sm placeholder:text-smoke/60"
+      />
+
+      <label
+        htmlFor="clave"
+        className="mb-1.5 block font-mono text-[11px] uppercase tracking-[0.16em] text-smoke"
+      >
+        Contraseña
+      </label>
+      <input
+        id="clave"
+        type="password"
+        required
+        autoComplete="current-password"
+        value={clave}
+        onChange={(e) => setClave(e.target.value)}
+        className="mb-3 w-full rounded-xl border border-white/15 bg-card px-3.5 py-3 text-sm"
       />
 
       {error && (
@@ -132,11 +121,16 @@ export function LoginForm() {
 
       <button
         type="submit"
-        disabled={estado === "enviando" || !correo.trim()}
+        disabled={entrando || !correo.trim() || !clave}
         className="w-full rounded-full bg-casta py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep disabled:opacity-45"
       >
-        {estado === "enviando" ? "Enviando…" : "Mandarme el enlace"}
+        {entrando ? "Entrando…" : "Entrar"}
       </button>
+
+      <p className="mt-4 font-mono text-[11px] leading-relaxed text-smoke">
+        ¿La olvidaste? Pedile a la otra persona del equipo que te la cambie
+        desde Equipo. No hace falta ningún correo.
+      </p>
     </form>
   );
 }

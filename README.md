@@ -51,9 +51,7 @@ duplicar.
 ## Desplegar
 
 Import normal de Vercel desde GitHub. Lo único que hay que configurar son las
-variables de entorno de [`.env.example`](.env.example). Después del primer
-deploy hay que agregar la URL de Vercel en Supabase → Authentication → URL
-Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
+variables de entorno de [`.env.example`](.env.example).
 
 ## Estado
 
@@ -67,7 +65,7 @@ Configuration → Redirect URLs, o el magic link sigue apuntando a localhost.
 - [x] Carrito + selector de proteína y extras
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp
 - [x] Guardar el pedido, con N° y total calculados en el servidor
-- [x] Auth del dueño por magic link, `/admin` protegido por middleware
+- [x] Auth con contraseña, `/admin` protegido por middleware y por RLS
 - [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Compras reales: registrar y borrar contra la base
@@ -174,10 +172,25 @@ que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
 
 ## Quién entra al back-office
 
+**Se entra con correo y contraseña, no con magic link.** El §6 del brief pedía
+enlace por correo y una sola cuenta; las dos cosas se cambiaron a propósito, por
+decisión del dueño y con buen motivo:
+
+> El enlace mete al servicio de correo en el camino crítico. El plan gratis de
+> Supabase manda **2 correos por hora**, así que perder la sesión un viernes a
+> las 8 PM significaba no poder entrar a la cocina hasta dentro de una hora. La
+> pantalla de cocina es el corazón del sistema: no puede depender de que llegue
+> un mail.
+
+Y la pieza que lo cierra: **la recuperación tampoco usa correo**. Si alguien
+olvida su contraseña, el otro admin se la cambia desde Equipo. Son dos personas
+que se ven todos los días. Con eso el cupo de Supabase queda fuera de la
+operación por completo.
+
 La lista vive en la tabla `admins` y se edita desde
 [`/admin/equipo`](https://casta-burger.vercel.app/admin/equipo). Agregar a
-alguien hace dos cosas: lo suma a la lista y le crea la cuenta, porque el
-formulario de acceso **ya no da de alta a nadie**.
+alguien lo suma a la lista **y** le crea la cuenta con la contraseña que le
+pongas, que se la decís de palabra.
 
 Son tres cierres, y el que importa es el último:
 

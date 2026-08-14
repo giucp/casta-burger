@@ -15,8 +15,53 @@ export type Resultado = { ok: true } | { ok: false; error: string };
 /** Formato de correo, a lo básico y sin pretensiones de RFC. */
 const CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/**
+ * 8 y no 6. Este panel tiene los pedidos con nombre, teléfono y dirección de
+ * cada cliente; seis caracteres es poco para eso. Se valida acá y no solo en el
+ * navegador porque una acción de servidor la puede llamar cualquiera.
+ */
+const CLAVE_MINIMA = 8;
+
 function normalizar(correo: string): string {
   return correo.trim().toLowerCase();
+}
+
+/**
+ * Corta si quien llama no es admin.
+ *
+ * Hace falta explícitamente en todo lo que toque la llave secreta: esa llave se
+ * salta el RLS, así que ahí la base ya no protege nada y la autorización tiene
+ * que estar en el código. Se pregunta con el cliente de SESIÓN, que es el único
+ * que sabe quién está llamando.
+ */
+async function exigirAdmin(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc("es_admin");
+  return data === true ? null : "No tenés permiso para esto.";
+}
+
+/**
+ * El id de Auth de un correo.
+ *
+ * La API de administración de Supabase no busca por correo, así que hay que
+ * recorrer las páginas. Para un equipo de dos personas sobra; el tope de 10
+ * páginas está para que un error no se convierta en un bucle infinito.
+ */
+async function idDe(email: string): Promise<string | null> {
+  const admin = createAdminClient();
+  for (let pagina = 1; pagina <= 10; pagina++) {
+    const { data, error } = await admin.auth.admin.listUsers({
+      page: pagina,
+      perPage: 200,
+    });
+    if (error || !data?.users?.length) return null;
+    const encontrado = data.users.find(
+      (u) => (u.email ?? "").toLowerCase() === email,
+    );
+    if (encontrado) return encontrado.id;
+    if (data.users.length < 200) return null;
+  }
+  return null;
 }
 
 /**
@@ -45,25 +90,34 @@ export async function listarAdmins(): Promise<Admin[]> {
 }
 
 /**
- * Suma a alguien al back-office.
+ * Suma a alguien al back-office, con su contraseña puesta acá mismo.
  *
  * Son dos pasos y el orden importa:
  *
- * 1. La fila se inserta con el cliente de SESIÓN. Ahí es donde se autoriza:
- *    el RLS solo deja escribir en `admins` a quien ya es admin. Si el que
- *    llama no lo es, la inserción falla y no se sigue.
+ * 1. La fila se inserta con el cliente de SESIÓN. Ahí es donde se autoriza: el
+ *    RLS solo deja escribir en `admins` a quien ya es admin. Si el que llama no
+ *    lo es, la inserción falla y no se sigue.
  *
- * 2. Recién entonces se crea la cuenta de Auth con la llave secreta. Hace
- *    falta porque el login ya no da de alta a nadie (`shouldCreateUser: false`):
- *    sin este paso, el correo quedaría en la lista pero la persona pediría su
- *    enlace y no le llegaría nunca.
+ * 2. Recién entonces se crea la cuenta con la llave secreta.
  *
- * Nunca al revés. La llave secreta se salta el RLS, así que crear la cuenta
+ * Nunca al revés: la llave secreta se salta el RLS, así que crear la cuenta
  * primero sería regalarle una cuenta a cualquiera que llame a esta acción.
+ *
+ * La contraseña se la decís a la persona de palabra. No se manda ningún correo
+ * —ni hace falta— y así el cupo de Supabase queda fuera del camino.
  */
-export async function agregarAdmin(correo: string): Promise<Resultado> {
+export async function agregarAdmin(
+  correo: string,
+  clave: string,
+): Promise<Resultado> {
   const email = normalizar(correo);
-  if (!CORREO.test(email)) return { ok: false, error: "Ese correo no es válido." };
+  if (!CORREO.test(email))
+    return { ok: false, error: "Ese correo no es válido." };
+  if (clave.length < CLAVE_MINIMA)
+    return {
+      ok: false,
+      error: `La contraseña tiene que tener al menos ${CLAVE_MINIMA} caracteres.`,
+    };
 
   const supabase = await createClient();
   const {
@@ -84,23 +138,75 @@ export async function agregarAdmin(correo: string): Promise<Resultado> {
   const admin = createAdminClient();
   const { error: errorCuenta } = await admin.auth.admin.createUser({
     email,
-    // Sin esto, Supabase le mandaría primero un correo de confirmación y el
-    // enlace de acceso no funcionaría hasta que lo abriera.
+    password: clave,
+    // Sin esto Supabase le mandaría un correo de confirmación y no podría
+    // entrar hasta abrirlo — justo lo que estamos sacando del medio.
     email_confirm: true,
   });
 
-  // Que ya exista la cuenta no es un problema: es el caso de alguien que se
-  // había registrado antes. Lo que importa es que ahora está en la lista.
-  if (errorCuenta && !/already/i.test(errorCuenta.message)) {
-    console.error("No se pudo crear la cuenta:", errorCuenta.message);
-    return {
-      ok: false,
-      error:
-        "Quedó en la lista, pero no se pudo crear su cuenta. Que pida el enlace igual y avisame si no le llega.",
-    };
+  if (errorCuenta) {
+    // Ya existía la cuenta (alguien de antes): se le pone la contraseña nueva.
+    const id = await idDe(email);
+    if (!id) {
+      console.error("No se pudo crear la cuenta:", errorCuenta.message);
+      return {
+        ok: false,
+        error: "Quedó en la lista, pero no se pudo crear su cuenta. Avisame.",
+      };
+    }
+    const { error: errorClave } = await admin.auth.admin.updateUserById(id, {
+      password: clave,
+    });
+    if (errorClave)
+      return {
+        ok: false,
+        error: "Quedó en la lista, pero no se pudo poner la contraseña.",
+      };
   }
 
   revalidatePath("/admin/equipo");
+  return { ok: true };
+}
+
+/**
+ * Cambiarle la contraseña a otro admin: es la recuperación del sistema.
+ *
+ * Que no dependa del correo es todo el punto del cambio. Si el cocinero olvida
+ * la suya un viernes a las 8 PM, el dueño se la cambia acá y sigue trabajando.
+ */
+export async function cambiarClaveDe(
+  correo: string,
+  clave: string,
+): Promise<Resultado> {
+  const noPuede = await exigirAdmin();
+  if (noPuede) return { ok: false, error: noPuede };
+
+  if (clave.length < CLAVE_MINIMA)
+    return {
+      ok: false,
+      error: `La contraseña tiene que tener al menos ${CLAVE_MINIMA} caracteres.`,
+    };
+
+  const email = normalizar(correo);
+
+  // Solo se le puede cambiar la contraseña a quien está en la lista. Sin esto,
+  // un admin podría cambiarle la contraseña a cualquier cuenta del proyecto.
+  const supabase = await createClient();
+  const { data: fila } = await supabase
+    .from("admins")
+    .select("email")
+    .eq("email", email)
+    .maybeSingle();
+  if (!fila) return { ok: false, error: "Ese correo no está en la lista." };
+
+  const id = await idDe(email);
+  if (!id) return { ok: false, error: "No se encontró esa cuenta." };
+
+  const { error } = await createAdminClient().auth.admin.updateUserById(id, {
+    password: clave,
+  });
+  if (error) return { ok: false, error: "No se pudo cambiar la contraseña." };
+
   return { ok: true };
 }
 
@@ -130,7 +236,10 @@ export async function quitarAdmin(correo: string): Promise<Resultado> {
   if (error) {
     // El trigger del último admin llega como error de la base
     if (/último admin/i.test(error.message))
-      return { ok: false, error: "Es el último admin: nadie podría volver a entrar." };
+      return {
+        ok: false,
+        error: "Es el último admin: nadie podría volver a entrar.",
+      };
     return { ok: false, error: "No se pudo quitar." };
   }
 
