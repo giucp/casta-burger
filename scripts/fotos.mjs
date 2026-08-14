@@ -2,22 +2,32 @@
  * Prepara una foto de producto para la web.
  *
  *     node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
+ *     node scripts/fotos.mjs "C:/ruta/combo 3.png" promo-3-cheese ancha
  *
  * Escribe DOS archivos, porque la foto se ve en dos lados y no sirve la misma:
  *
- * - `public/productos/<slug>.webp` — cuadrada, 720 px. Es la miniatura de la
- *   tarjeta del menú, que la muestra en un cuadro de 96 px con `object-cover`.
- *   Si el archivo no fuera cuadrado el navegador recortaría igual, pero a
- *   ciegas: mejor decidir el recorte acá y poder verlo.
- *
+ * - `public/productos/<slug>.webp` — el recorte de la tarjeta.
  * - `public/productos/<slug>-completa.webp` — la foto entera, sin recortar, con
  *   el lado largo en 1280 px. Es la que se abre al tocar la tarjeta. Acá va
- *   completa a propósito: es la toma del fotógrafo, vertical y con el reflejo,
- *   y es justamente lo que el recorte cuadrado se come.
+ *   completa a propósito: es la toma del fotógrafo, y es justamente lo que el
+ *   recorte se come.
  *
- * El encuadre del recorte lo elige sharp (`attention`): busca la zona con más
- * información y centra ahí. Un recorte al centro pelado le come la corona del
- * pan o deja medio cuadro de reflejo.
+ * El recorte tiene DOS formas, y elegir mal arruina la foto:
+ *
+ * - `cuadrada` (por defecto) — 720×720, para las tarjetas del menú, que
+ *   muestran la foto en un cuadro de 96 px. Sirve para un producto solo y
+ *   centrado.
+ *
+ * - `ancha` — 1280×720 (16:9), para el banner de las promos. Estas fotos son
+ *   composiciones horizontales —dos hamburguesas lado a lado, tres en fila— y
+ *   lo que comunican ES la cantidad. Un recorte cuadrado les cortaría las de
+ *   los extremos y la promo mostraría menos de lo que vende. En 16:9 solo se
+ *   recorta arriba y abajo, que es donde está el negro de sobra, y no se pierde
+ *   ninguna hamburguesa.
+ *
+ * El encuadre lo elige sharp (`attention`): busca la zona con más información y
+ * centra ahí. Un recorte al centro pelado le come la corona del pan o deja
+ * medio cuadro de reflejo.
  *
  * Todo sale en WebP. Los originales son PNG de 1,5–2 MB; el PNG guarda pixel
  * por pixel, que sirve para un logo con bordes limpios y es un desperdicio para
@@ -35,10 +45,14 @@ import { basename, join } from "node:path";
 import sharp from "sharp";
 
 /**
- * 720 px de lado para la miniatura. La tarjeta la muestra a 96 px, así que
- * sobra incluso en un teléfono de pantalla densa.
+ * Medidas del recorte de la tarjeta. La cuadrada se muestra a 96 px y la ancha
+ * a lo ancho de la tarjeta de promo: en las dos sobra hasta en un teléfono de
+ * pantalla densa.
  */
-const LADO = 720;
+const FORMAS = {
+  cuadrada: { ancho: 720, alto: 720 },
+  ancha: { ancho: 1280, alto: 720 },
+};
 
 /**
  * 1280 px el lado largo de la completa. Un teléfono la muestra a unos 400 px de
@@ -53,12 +67,13 @@ const CALIDAD = 82;
 const RAIZ = join(import.meta.dirname, "..");
 const DESTINO = join(RAIZ, "public", "productos");
 
-const [origen, slug] = process.argv.slice(2);
+const [origen, slug, forma = "cuadrada"] = process.argv.slice(2);
 
 if (!origen || !slug) {
   console.error(
-    'Uso: node scripts/fotos.mjs "<foto de origen>" <slug del producto>\n' +
-      'Ej:  node scripts/fotos.mjs "C:/Users/pc/Downloads/Casta burger.png" casta-burger',
+    'Uso: node scripts/fotos.mjs "<foto de origen>" <slug del producto> [cuadrada|ancha]\n' +
+      'Ej:  node scripts/fotos.mjs "C:/Users/pc/Downloads/Casta burger.png" casta-burger\n' +
+      'Ej:  node scripts/fotos.mjs "C:/Users/pc/Downloads/combo 3.png" promo-3-cheese ancha',
   );
   process.exit(1);
 }
@@ -70,10 +85,19 @@ if (!/^[a-z0-9-]+$/.test(slug)) {
   process.exit(1);
 }
 
+if (!(forma in FORMAS)) {
+  console.error(
+    `Forma inválida: "${forma}". Es "cuadrada" (menú) o "ancha" (promos).`,
+  );
+  process.exit(1);
+}
+
 await mkdir(DESTINO, { recursive: true });
 
-const miniatura = await sharp(origen)
-  .resize(LADO, LADO, { fit: "cover", position: sharp.strategy.attention })
+const { ancho, alto } = FORMAS[forma];
+
+const recorte = await sharp(origen)
+  .resize(ancho, alto, { fit: "cover", position: sharp.strategy.attention })
   .webp({ quality: CALIDAD })
   .toFile(join(DESTINO, `${slug}.webp`));
 
@@ -94,7 +118,7 @@ const { size: original } = await stat(origen);
 console.log(`${basename(origen)}  (${kb(original)})`);
 console.log(
   `  → productos/${slug}.webp` +
-    `           ${miniatura.width}×${miniatura.height}, ${kb(miniatura.size)}`,
+    `           ${recorte.width}×${recorte.height} (${forma}), ${kb(recorte.size)}`,
 );
 console.log(
   `  → productos/${slug}-completa.webp` +

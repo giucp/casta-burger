@@ -41,6 +41,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0011_papas_seccion_propia.sql` | Las papas salen de Extras a su propia sección, Fries |
 | `0012_fotos_reales.sql` | Las cuatro tarjetas con foto propia apuntan a la foto real |
 | `0013_foto_completa.sql` | Columna `foto_completa_url`: la foto entera, para verla en grande |
+| `0014_fotos_promos.sql` | Las tres promos con su foto, en recorte ancho |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -106,7 +107,7 @@ lados y no sirve la misma:
 
 | Archivo | Dónde se ve | Columna |
 |---|---|---|
-| `<slug>.webp` | miniatura de la tarjeta, cuadrada de 720 px | `foto_url` |
+| `<slug>.webp` | el recorte de la tarjeta | `foto_url` |
 | `<slug>-completa.webp` | al tocar la tarjeta, entera y sin recortar | `foto_completa_url` |
 
 Van en [`public/productos/`](public/productos) y las rutas son **del sitio**,
@@ -117,14 +118,20 @@ Para preparar una foto nueva, que escribe las dos:
 
 ```bash
 node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
+node scripts/fotos.mjs "C:/ruta/combo 3.png" promo-3-cheese ancha
 ```
 
-El recorte cuadrado elige el encuadre solo, porque las fotos son verticales y
-uno al centro le come la corona del pan. Los originales del fotógrafo (PNG de
-1,5–2 MB) quedan en ~50 KB la miniatura y ~80 KB la completa, y **no van al
-repo**. Después hay que dejar las dos rutas escritas en la base con un
-`update`, como en
-[`0013_foto_completa.sql`](supabase/migrations/0013_foto_completa.sql).
+**Elegir la forma importa.** `cuadrada` (por defecto) es para las tarjetas del
+menú, que muestran la foto en un cuadro de 96 px: sirve para un producto solo y
+centrado. `ancha` es 16:9, para el banner de las promos: esas fotos son
+composiciones horizontales —dos hamburguesas lado a lado, tres en fila— y lo
+que comunican **es la cantidad**. Un recorte cuadrado les cortaría las de los
+extremos y la promo mostraría menos de lo que vende.
+
+El encuadre lo elige el script solo. Los originales del fotógrafo quedan en
+~50 KB el recorte y ~50–90 KB la completa, y **no van al repo**. Después hay
+que dejar las dos rutas escritas en la base con un `update`, como en
+[`0014_fotos_promos.sql`](supabase/migrations/0014_fotos_promos.sql).
 
 Si un producto tiene miniatura pero no foto completa, la tarjeta simplemente no
 se ofrece como tocable. Es mejor eso que prometer una foto que no abre.
