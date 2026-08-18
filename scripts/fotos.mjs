@@ -12,28 +12,22 @@
  *   completa a propósito: es la toma del fotógrafo, y es justamente lo que el
  *   recorte se come.
  *
- * El recorte tiene dos formas:
- *
- * - `ancha` (por defecto) — 1280×720 (16:9). Todos los banners de la web, tanto
- *   del menú como de las promos.
+ * El recorte tiene DOS formas, y elegir mal arruina la foto:
  *
  * - `cuadrada` — 720×720. La miniatura chica de antes, cuando la foto iba al
- *   costado del texto. Queda por si alguna vez hace falta.
+ *   costado del texto.
  *
- * Sobre el 16:9 en fotos verticales: sí, a la hamburguesa le corta el pan de
- * abajo. **Es a propósito.** El banner no está para inventariar el producto sino
- * para dar hambre, y un plano cerrado sobre la carne, el queso derretido y la
- * tocineta vende más que el sándwich entero visto de lejos. El que quiera verlo
- * completo toca la tarjeta y se abre la foto sin recortar.
+ * - `producto` (por defecto) — 4:3, para el banner de las tarjetas del menú.
+ *   Es el recorte más ancho que estas fotos aguantan: son verticales, y en
+ *   16:9 la hamburguesa pierde el pan de arriba y el de abajo y queda un primer
+ *   plano de textura en vez de un producto. En 4:3 entra entera y con aire.
  *
- * Con las papas se ve clarísimo: de la mitad del empaque para abajo no hay nada
- * que mirar, y ese espacio en el banner se lo comía la bolsa en vez de las
- * papas.
- *
- * En las promos el 16:9 se eligió por otro motivo: son composiciones
- * horizontales y lo que comunican es la CANTIDAD, así que recortarlas de los
- * costados les quitaría hamburguesas. Distinta razón, misma proporción, y de
- * paso todas las tarjetas de la web miden igual.
+ * - `ancha` — 1280×720 (16:9), para el banner de las promos. Estas fotos son
+ *   composiciones horizontales —dos hamburguesas lado a lado, tres en fila— y
+ *   lo que comunican ES la cantidad. Un recorte cuadrado les cortaría las de
+ *   los extremos y la promo mostraría menos de lo que vende. En 16:9 solo se
+ *   recorta arriba y abajo, que es donde está el negro de sobra, y no se pierde
+ *   ninguna hamburguesa.
  *
  * El encuadre lo elige sharp (`attention`): busca la zona con más información y
  * centra ahí. Un recorte al centro pelado le come la corona del pan o deja
@@ -55,12 +49,14 @@ import { basename, join } from "node:path";
 import sharp from "sharp";
 
 /**
- * Medidas del recorte. La tarjeta muestra el banner a 512 px como mucho, así
- * que 1280 sobra hasta en un teléfono de pantalla densa.
+ * Medidas del recorte de la tarjeta. La cuadrada se muestra a 96 px y la ancha
+ * a lo ancho de la tarjeta de promo: en las dos sobra hasta en un teléfono de
+ * pantalla densa.
  */
 const FORMAS = {
-  ancha: { ancho: 1280, alto: 720 },
   cuadrada: { ancho: 720, alto: 720 },
+  producto: { ancho: 960, alto: 720 },
+  ancha: { ancho: 1280, alto: 720 },
 };
 
 /**
@@ -76,7 +72,7 @@ const CALIDAD = 82;
 const RAIZ = join(import.meta.dirname, "..");
 const DESTINO = join(RAIZ, "public", "productos");
 
-const [origen, slug, forma = "ancha"] = process.argv.slice(2);
+const [origen, slug, forma = "producto"] = process.argv.slice(2);
 
 if (!origen || !slug) {
   console.error(
@@ -96,7 +92,7 @@ if (!/^[a-z0-9-]+$/.test(slug)) {
 
 if (!(forma in FORMAS)) {
   console.error(
-    `Forma inválida: "${forma}". Es "ancha" (por defecto) o "cuadrada".`,
+    `Forma inválida: "${forma}". Es "producto" (menú), "ancha" (promos) o "cuadrada".`,
   );
   process.exit(1);
 }
