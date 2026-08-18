@@ -9,6 +9,9 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 const PUBLICAS = ["/admin/login"];
 
+/** Lo único que ve el rol cocina, y donde aterriza todo el mundo al entrar. */
+const COCINA = "/admin/cocina";
+
 /**
  * Refresca la sesión en cada request y protege /admin (§6 del brief).
  *
@@ -67,17 +70,34 @@ export async function updateSession(request: NextRequest) {
    *
    * Antes acá solo se preguntaba si había sesión, y con el formulario de login
    * dando de alta a cualquier correo, eso quería decir que cualquiera entraba.
-   * `es_admin()` pregunta contra la lista de admins de la base — la misma que
+   * `mi_rol()` pregunta contra la lista de admins de la base — la misma que
    * usan todas las políticas de RLS, así que la interfaz y los datos no pueden
    * contradecirse.
    */
-  let autorizado = false;
+  let rol: string | null = null;
   if (sesion) {
-    const { data: ok } = await supabase.rpc("es_admin");
-    autorizado = ok === true;
+    const { data } = await supabase.rpc("mi_rol");
+    rol = typeof data === "string" ? data : null;
   }
+  const autorizado = rol !== null;
 
   const esPublica = PUBLICAS.some((p) => ruta.startsWith(p));
+
+  /**
+   * El cocinero entra a cocinar, no a la caja. Con rol 'cocina' solo existe la
+   * pantalla de pedidos: el resto del panel son las ventas del día, la
+   * ganancia neta, las compras y los precios, y nada de eso hace falta para
+   * despachar.
+   *
+   * Por debajo el RLS dice exactamente lo mismo, así que esto no es la
+   * seguridad: es no mostrarle pantallas que le volverían vacías.
+   */
+  if (rol === "cocina" && !esPublica && ruta !== COCINA) {
+    const destino = request.nextUrl.clone();
+    destino.pathname = COCINA;
+    destino.search = "";
+    return NextResponse.redirect(destino);
+  }
 
   if (!esPublica && !autorizado) {
     const destino = request.nextUrl.clone();
@@ -100,7 +120,7 @@ export async function updateSession(request: NextRequest) {
    */
   if (ruta === "/admin/login" && autorizado) {
     const destino = request.nextUrl.clone();
-    destino.pathname = "/admin/cocina";
+    destino.pathname = COCINA;
     destino.search = "";
     return NextResponse.redirect(destino);
   }

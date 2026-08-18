@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+/** 'dueno' ve y toca todo. 'cocina' solo ve pedidos y les cambia el estado. */
+export type Rol = "dueno" | "cocina";
+
 export type Admin = {
   email: string;
+  rol: Rol;
   agregadoPor: string | null;
   desde: string;
 };
@@ -27,16 +31,20 @@ function normalizar(correo: string): string {
 }
 
 /**
- * Corta si quien llama no es admin.
+ * Corta si quien llama no es dueño.
  *
  * Hace falta explícitamente en todo lo que toque la llave secreta: esa llave se
  * salta el RLS, así que ahí la base ya no protege nada y la autorización tiene
  * que estar en el código. Se pregunta con el cliente de SESIÓN, que es el único
  * que sabe quién está llamando.
+ *
+ * Dueño y no cualquier admin: repartir accesos y contraseñas es justo lo que un
+ * cocinero no tiene que poder hacer. Una acción de servidor se puede llamar
+ * directamente, sin pasar por la pantalla que la esconde.
  */
-async function exigirAdmin(): Promise<string | null> {
+async function exigirDueno(): Promise<string | null> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("es_admin");
+  const { data } = await supabase.rpc("es_dueno");
   return data === true ? null : "No tenés permiso para esto.";
 }
 
@@ -74,7 +82,7 @@ export async function listarAdmins(): Promise<Admin[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("admins")
-    .select("email, agregado_por, created_at")
+    .select("email, rol, agregado_por, created_at")
     .order("created_at");
 
   if (error) {
@@ -84,6 +92,7 @@ export async function listarAdmins(): Promise<Admin[]> {
 
   return (data ?? []).map((f) => ({
     email: f.email as string,
+    rol: (f.rol as Rol) ?? "cocina",
     agregadoPor: (f.agregado_por as string | null) ?? null,
     desde: f.created_at as string,
   }));
@@ -105,10 +114,15 @@ export async function listarAdmins(): Promise<Admin[]> {
  *
  * La contraseña se la decís a la persona de palabra. No se manda ningún correo
  * —ni hace falta— y así el cupo de Supabase queda fuera del camino.
+ *
+ * El rol por defecto es 'cocina', el de menos poder. Equivocarse hacia abajo se
+ * arregla con un clic; hacia arriba significa haberle dado las ventas del día y
+ * los datos de los clientes a alguien sin querer.
  */
 export async function agregarAdmin(
   correo: string,
   clave: string,
+  rol: Rol = "cocina",
 ): Promise<Resultado> {
   const email = normalizar(correo);
   if (!CORREO.test(email))
@@ -126,7 +140,7 @@ export async function agregarAdmin(
 
   const { error } = await supabase
     .from("admins")
-    .insert({ email, agregado_por: user?.email ?? null });
+    .insert({ email, rol, agregado_por: user?.email ?? null });
 
   if (error) {
     // 23505 = clave duplicada
@@ -178,7 +192,7 @@ export async function cambiarClaveDe(
   correo: string,
   clave: string,
 ): Promise<Resultado> {
-  const noPuede = await exigirAdmin();
+  const noPuede = await exigirDueno();
   if (noPuede) return { ok: false, error: noPuede };
 
   if (clave.length < CLAVE_MINIMA)

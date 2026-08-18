@@ -43,6 +43,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0013_foto_completa.sql` | Columna `foto_completa_url`: la foto entera, para verla en grande |
 | `0014_fotos_promos.sql` | Las tres promos con su foto, en recorte ancho |
 | `0015_admins_de_verdad.sql` | Lista de admins: el RLS pregunta *quién* entra, no solo si entró |
+| `0016_cocina_no_es_dueno.sql` | Dos roles: la cocina ve pedidos, el dueño ve todo |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -191,6 +192,29 @@ La lista vive en la tabla `admins` y se edita desde
 [`/admin/equipo`](https://casta-burger.vercel.app/admin/equipo). Agregar a
 alguien lo suma a la lista **y** le crea la cuenta con la contraseña que le
 pongas, que se la decís de palabra.
+
+### Dos roles
+
+| | `cocina` | `dueno` |
+|---|---|---|
+| Ver pedidos y cambiarles el estado | sí | sí |
+| Ventas del día, ganancia, compras | no | sí |
+| Inventario | no | sí |
+| Cambiar precios del menú | no | sí |
+| Datos de contacto de los clientes | solo del pedido que despacha | sí |
+| Repartir accesos y contraseñas | no | sí |
+
+El cocinero necesita leer pedidos y moverlos de estado. Nada más. Darle el
+resto sería darle las ventas del día y el poder de cambiar precios — y, antes
+de esto, también el de sacarle el acceso al dueño desde Equipo.
+
+El rol por defecto al sumar a alguien es `cocina`, el de menos poder:
+equivocarse hacia abajo se arregla con un clic, hacia arriba significa haber
+repartido los números del negocio sin querer.
+
+Dos triggers cuidan que siempre quede al menos un `dueno`: no se puede borrar
+al último ni degradarlo. Sin eso, el negocio quedaría sin nadie que pueda ver
+los números ni repartir accesos.
 
 Son tres cierres, y el que importa es el último:
 

@@ -13,7 +13,7 @@ import { createClient } from "@/lib/supabase/server";
  *
  * - `getUser()` confirma contra el servidor de Auth que la cuenta siga
  *   existiendo y no haya sido revocada.
- * - `es_admin()` confirma que además esté en la lista de admins.
+ * - `mi_rol()` confirma que además esté en la lista, y con qué rol.
  * - Y por debajo de todo, el RLS de la base vuelve a preguntar lo mismo en
  *   cada consulta. Esa es la frontera que de verdad importa: si alguien se
  *   saltara estas dos, seguiría sin poder leer ni escribir nada.
@@ -28,8 +28,8 @@ export default async function AdminLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: autorizado } = await supabase.rpc("es_admin");
-  if (!user || autorizado !== true) redirect("/admin/login?error=sin-permiso");
+  const { data: rol } = await supabase.rpc("mi_rol");
+  if (!user || typeof rol !== "string") redirect("/admin/login?error=sin-permiso");
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-ink">
@@ -55,7 +55,7 @@ export default async function AdminLayout({
           </Link>
           <BotonSalir />
         </div>
-        <AdminNav />
+        <AdminNav rol={rol} />
       </header>
 
       <main className="mx-auto w-full max-w-[1180px] flex-1 px-5 py-6">

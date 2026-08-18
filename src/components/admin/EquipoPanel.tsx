@@ -7,9 +7,24 @@ import {
   cambiarClaveDe,
   quitarAdmin,
   type Admin,
+  type Rol,
 } from "@/lib/acciones/equipo";
 
 const CLAVE_MINIMA = 8;
+
+const ROLES: { valor: Rol; titulo: string; explica: string }[] = [
+  {
+    valor: "cocina",
+    titulo: "Cocina",
+    explica: "Ve los pedidos y les cambia el estado. Nada más.",
+  },
+  {
+    valor: "dueno",
+    titulo: "Dueño",
+    explica:
+      "Todo: las ventas del día, las compras, los precios y quién entra acá.",
+  },
+];
 
 function Campo({
   id,
@@ -74,6 +89,7 @@ export function EquipoPanel({
   // --- alta ---
   const [correo, setCorreo] = useState("");
   const [clave, setClave] = useState("");
+  const [rolNuevo, setRolNuevo] = useState<Rol>("cocina");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -106,14 +122,14 @@ export function EquipoPanel({
     if (!email) return;
 
     setGuardando(true);
-    const r = await agregarAdmin(email, clave);
+    const r = await agregarAdmin(email, clave, rolNuevo);
     setGuardando(false);
 
     if (!r.ok) return setError(r.error);
 
     setAdmins((lista) => [
       ...lista,
-      { email, agregadoPor: yo, desde: new Date().toISOString() },
+      { email, rol: rolNuevo, agregadoPor: yo, desde: new Date().toISOString() },
     ]);
     setCorreo("");
     setClave("");
@@ -197,6 +213,35 @@ export function EquipoPanel({
               autoComplete="new-password"
             />
           </div>
+          <fieldset className="mb-3">
+            <legend className="mb-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-smoke">
+              Qué puede hacer
+            </legend>
+            <div className="flex flex-wrap gap-2">
+              {ROLES.map((r) => (
+                <button
+                  key={r.valor}
+                  type="button"
+                  onClick={() => setRolNuevo(r.valor)}
+                  aria-pressed={rolNuevo === r.valor}
+                  className={[
+                    "rounded-xl border px-3.5 py-2.5 text-left transition-colors",
+                    rolNuevo === r.valor
+                      ? "border-casta bg-casta/10"
+                      : "border-white/15 hover:border-white/35",
+                  ].join(" ")}
+                >
+                  <span className="block font-mono text-xs font-bold uppercase tracking-[0.08em]">
+                    {r.titulo}
+                  </span>
+                  <span className="block max-w-[26ch] font-mono text-[10px] leading-snug text-smoke">
+                    {r.explica}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
           <button
             type="submit"
             disabled={guardando || !correo.trim() || !clave}
@@ -229,6 +274,9 @@ export function EquipoPanel({
                           vos
                         </span>
                       )}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-casta">
+                      {a.rol === "dueno" ? "Dueño · todo" : "Cocina · solo pedidos"}
                     </p>
                     {a.agregadoPor && !soyYo && (
                       <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-smoke/80">

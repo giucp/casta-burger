@@ -3,21 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+/**
+ * `soloDueno` marca lo que la cocina no necesita para despachar: la plata del
+ * día, los precios y el reparto de accesos. No es la seguridad —de eso se
+ * ocupan el middleware y el RLS— es no ofrecerle puertas que no abren.
+ */
 const SECCIONES = [
-  { href: "/admin", label: "Panel" },
-  { href: "/admin/cocina", label: "Cocina" },
-  { href: "/admin/menu", label: "Menú" },
-  { href: "/admin/inventario", label: "Inventario" },
-  { href: "/admin/compras", label: "Compras" },
-  { href: "/admin/equipo", label: "Equipo" },
+  { href: "/admin", label: "Panel", soloDueno: true },
+  { href: "/admin/cocina", label: "Cocina", soloDueno: false },
+  { href: "/admin/menu", label: "Menú", soloDueno: true },
+  { href: "/admin/inventario", label: "Inventario", soloDueno: true },
+  { href: "/admin/compras", label: "Compras", soloDueno: true },
+  { href: "/admin/equipo", label: "Equipo", soloDueno: true },
 ];
 
-export function AdminNav() {
+export function AdminNav({ rol }: { rol: string }) {
   const ruta = usePathname();
+  const visibles = SECCIONES.filter((s) => !s.soloDueno || rol === "dueno");
+
+  // Con una sola sección, la barra de pestañas es ruido.
+  if (visibles.length < 2) return null;
 
   return (
     <nav className="mx-auto flex max-w-[1180px] gap-1 overflow-x-auto px-3 pb-2">
-      {SECCIONES.map((s) => {
+      {visibles.map((s) => {
         const activa = ruta === s.href;
         return (
           <Link
