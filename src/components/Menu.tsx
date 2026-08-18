@@ -63,9 +63,11 @@ export function Menu({ items }: { items: MenuItem[] }) {
               titulo="Burgers"
               nota={PROTEINAS.map((p) => p.toLowerCase()).join(" · ")}
             />
-            {burgers.map((item) => (
-              <MenuCard key={item.id} item={item} />
-            ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {burgers.map((item) => (
+                <MenuCard key={item.id} item={item} />
+              ))}
+            </div>
           </>
         )}
 
@@ -76,9 +78,11 @@ export function Menu({ items }: { items: MenuItem[] }) {
             <div className="mt-9.5" id="fries">
               <SecHead titulo="Fries" nota="para acompañar" />
             </div>
-            {fries.map((item) => (
-              <MenuCard key={item.id} item={item} />
-            ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              {fries.map((item) => (
+                <MenuCard key={item.id} item={item} />
+              ))}
+            </div>
           </>
         )}
 

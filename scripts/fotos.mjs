@@ -14,9 +14,13 @@
  *
  * El recorte tiene DOS formas, y elegir mal arruina la foto:
  *
- * - `cuadrada` (por defecto) — 720×720, para las tarjetas del menú, que
- *   muestran la foto en un cuadro de 96 px. Sirve para un producto solo y
- *   centrado.
+ * - `cuadrada` — 720×720. La miniatura chica de antes, cuando la foto iba al
+ *   costado del texto.
+ *
+ * - `producto` (por defecto) — 4:3, para el banner de las tarjetas del menú.
+ *   Es el recorte más ancho que estas fotos aguantan: son verticales, y en
+ *   16:9 la hamburguesa pierde el pan de arriba y el de abajo y queda un primer
+ *   plano de textura en vez de un producto. En 4:3 entra entera y con aire.
  *
  * - `ancha` — 1280×720 (16:9), para el banner de las promos. Estas fotos son
  *   composiciones horizontales —dos hamburguesas lado a lado, tres en fila— y
@@ -51,6 +55,7 @@ import sharp from "sharp";
  */
 const FORMAS = {
   cuadrada: { ancho: 720, alto: 720 },
+  producto: { ancho: 960, alto: 720 },
   ancha: { ancho: 1280, alto: 720 },
 };
 
@@ -67,7 +72,7 @@ const CALIDAD = 82;
 const RAIZ = join(import.meta.dirname, "..");
 const DESTINO = join(RAIZ, "public", "productos");
 
-const [origen, slug, forma = "cuadrada"] = process.argv.slice(2);
+const [origen, slug, forma = "producto"] = process.argv.slice(2);
 
 if (!origen || !slug) {
   console.error(
@@ -87,7 +92,7 @@ if (!/^[a-z0-9-]+$/.test(slug)) {
 
 if (!(forma in FORMAS)) {
   console.error(
-    `Forma inválida: "${forma}". Es "cuadrada" (menú) o "ancha" (promos).`,
+    `Forma inválida: "${forma}". Es "producto" (menú), "ancha" (promos) o "cuadrada".`,
   );
   process.exit(1);
 }

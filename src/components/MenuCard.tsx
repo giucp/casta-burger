@@ -11,6 +11,18 @@ import { VisorFoto } from "./VisorFoto";
 
 /**
  * Tarjeta de producto del panel "hueso".
+ *
+ * La foto va de banner arriba, cruzando la tarjeta, y no de miniatura al
+ * costado. Es la misma decisión que en Promos y por el mismo motivo: a 78 px la
+ * foto era un sello, no un producto.
+ *
+ * El banner es 4:3 y no 16:9 como el de las promos, y ahí está el detalle que
+ * importa: estas fotos son VERTICALES, de un producto solo y centrado. En 16:9
+ * la hamburguesa pierde el pan de arriba y el de abajo, y lo que queda es un
+ * primer plano de textura que podría ser de cualquier hamburguesa del mundo.
+ * En 4:3 entra entera, con el reflejo asomando. Las de promo aguantan 16:9
+ * porque son composiciones horizontales.
+ *
  * Agotado = tarjeta atenuada y botón deshabilitado (§3).
  */
 export function MenuCard({ item }: { item: MenuItem }) {
@@ -24,129 +36,128 @@ export function MenuCard({ item }: { item: MenuItem }) {
 
   /**
    * Las fotos van en `public/productos/`, así que `foto_url` es una ruta del
-   * sitio ("/productos/papas.jpg"). Una URL de otro dominio se ignora a
+   * sitio ("/productos/papas.webp"). Una URL de otro dominio se ignora a
    * propósito: next/image la rechazaría en runtime y tumbaría la página.
    */
   const foto = item.fotoUrl?.startsWith("/") ? item.fotoUrl : undefined;
-  const Glyph = item.categoria === "Fries" ? FriesGlyph : BurgerGlyph;
-
-  /**
-   * La tarjeta se toca para ver la foto entera. Solo si hay foto entera de
-   * verdad: prometer una que no abre es peor que no ofrecerla.
-   */
   const fotoCompleta = item.fotoCompletaUrl?.startsWith("/")
     ? item.fotoCompletaUrl
     : undefined;
+  const Glyph = item.categoria === "Fries" ? FriesGlyph : BurgerGlyph;
 
   return (
     <>
-    <article
-      // El toque abre la foto en cualquier parte de la tarjeta, no solo en la
-      // miniatura, que a 78 px es un blanco chico para un pulgar. Los dos
-      // botones de adentro cortan la propagación para que sigan haciendo lo
-      // suyo.
-      onClick={fotoCompleta ? () => setViendoFoto(true) : undefined}
-      className={[
-        "flex gap-4 border-b border-bone-line py-4.5",
-        agotado ? "opacity-50" : "",
-        fotoCompleta ? "cursor-zoom-in" : "",
-      ].join(" ")}
-    >
-      <div className="relative flex size-[78px] shrink-0 items-center justify-center overflow-hidden rounded-card bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)] sm:size-24">
-        {foto ? (
-          <Image
-            src={foto}
-            alt={item.nombre}
-            fill
-            sizes="(min-width: 640px) 96px, 78px"
-            className="object-cover"
-          />
-        ) : (
-          <Glyph className="size-14" apagado={agotado} />
-        )}
+      <article
+        // Se toca en cualquier parte para ver la foto entera. Los botones de
+        // adentro cortan la propagación para seguir haciendo lo suyo.
+        onClick={fotoCompleta ? () => setViendoFoto(true) : undefined}
+        className={[
+          "flex flex-col overflow-hidden rounded-card border border-bone-line bg-white/25",
+          agotado ? "opacity-50" : "",
+          fotoCompleta ? "cursor-zoom-in" : "",
+        ].join(" ")}
+      >
+        {/* Fondo negro y no hueso: la foto ya viene sobre negro, así que
+            mientras carga no se ve un rectángulo claro que después se apaga. */}
+        <div
+          className={`relative aspect-[4/3] w-full ${
+            foto
+              ? "bg-black"
+              : "flex items-center justify-center bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)]"
+          }`}
+        >
+          {foto ? (
+            <Image
+              src={foto}
+              alt={item.nombre}
+              fill
+              // El menú está topado en 1080 con 20 de aire a cada lado, y la
+              // grilla se parte en dos con 16 de separación: de ahí para
+              // arriba la tarjeta mide 512 y no crece más.
+              sizes="(min-width: 1080px) 512px, (min-width: 640px) 50vw, 100vw"
+              className="object-cover"
+            />
+          ) : (
+            <Glyph className="size-20" apagado={agotado} />
+          )}
 
-        {/* La señal de que hay foto grande. Además de decirlo, es el punto de
-            entrada por teclado y el que anuncia el lector de pantalla: el
-            `onClick` del article no es alcanzable sin mouse ni dedo. */}
-        {fotoCompleta && (
-          <button
-            type="button"
-            aria-label={`Ver la foto de ${item.nombre}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setViendoFoto(true);
-            }}
-            className="absolute right-1 bottom-1 grid size-5.5 place-items-center rounded-full bg-bone/92 text-bone-ink shadow-sm transition-colors hover:bg-bone sm:right-1.5 sm:bottom-1.5 sm:size-6"
-          >
-            <AmpliarIcon className="size-3 sm:size-3.5" />
-          </button>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2.5">
-          <h3 className="font-display text-[22px] uppercase tracking-[0.01em]">
-            {item.nombre}
-          </h3>
-          <Precio monto={item.precio} />
+          {fotoCompleta && (
+            <button
+              type="button"
+              aria-label={`Ver la foto de ${item.nombre}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setViendoFoto(true);
+              }}
+              className="absolute right-2 bottom-2 grid size-7 place-items-center rounded-full bg-bone/92 text-bone-ink shadow-sm transition-colors hover:bg-bone"
+            >
+              <AmpliarIcon className="size-3.5" />
+            </button>
+          )}
         </div>
 
-        {item.descripcion && (
-          <p className="my-1.5 max-w-[52ch] text-[13.5px] text-bone-soft">
-            {item.descripcion}
-          </p>
-        )}
+        <div className="flex flex-1 flex-col px-4 py-3.5">
+          <div className="flex items-baseline justify-between gap-2.5">
+            <h3 className="font-display text-[22px] uppercase leading-tight tracking-[0.01em]">
+              {item.nombre}
+            </h3>
+            <Precio monto={item.precio} />
+          </div>
 
-        {item.tags && item.tags.length > 0 && (
-          <ul className="mb-3 flex flex-wrap gap-1.5">
-            {item.tags.map((tag) => (
-              <li
-                key={tag}
-                className="rounded-full border border-bone-line px-2.5 py-[3px] font-mono text-[10px] uppercase tracking-[0.06em] text-[#6b6152]"
-              >
-                {tag}
-              </li>
-            ))}
-            {agotado && (
-              <li className="rounded-full border border-bone-line px-2.5 py-[3px] font-mono text-[10px] uppercase tracking-[0.06em] text-[#6b6152]">
-                agotado hoy
-              </li>
-            )}
-          </ul>
-        )}
+          {item.descripcion && (
+            <p className="my-1.5 text-[13.5px] text-bone-soft">
+              {item.descripcion}
+            </p>
+          )}
 
-        <button
-          type="button"
-          disabled={deshabilitado}
-          onClick={(e) => {
-            e.stopPropagation();
-            abrirProducto(item);
-          }}
-          className={[
-            "rounded-full px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white",
-            "transition-transform duration-75 active:scale-94",
-            deshabilitado
-              ? "cursor-not-allowed bg-[#b7ad99]"
-              : "bg-casta hover:bg-casta-deep",
-          ].join(" ")}
-        >
-          {agotado ? "Agotado" : "Agregar +"}
-        </button>
-      </div>
-    </article>
+          {item.tags && item.tags.length > 0 && (
+            <ul className="mb-3 flex flex-wrap gap-1.5">
+              {item.tags.map((tag) => (
+                <li
+                  key={tag}
+                  className="rounded-full border border-bone-line px-2.5 py-[3px] font-mono text-[10px] uppercase tracking-[0.06em] text-[#6b6152]"
+                >
+                  {tag}
+                </li>
+              ))}
+              {agotado && (
+                <li className="rounded-full border border-bone-line px-2.5 py-[3px] font-mono text-[10px] uppercase tracking-[0.06em] text-[#6b6152]">
+                  agotado hoy
+                </li>
+              )}
+            </ul>
+          )}
 
-    {/* Hermano del article, NO hijo: React propaga los eventos por el árbol de
-        componentes, así que adentro cualquier toque para cerrar subía hasta el
-        `onClick` del article y volvía a abrir la foto en el mismo toque. En
-        escritorio no se notaba porque Escape no pasa por ahí; en un teléfono,
-        que no tiene Escape, la foto no había forma de cerrarla. */}
-    {viendoFoto && fotoCompleta && (
-      <VisorFoto
-        src={fotoCompleta}
-        nombre={item.nombre}
-        onClose={() => setViendoFoto(false)}
-      />
-    )}
+          <button
+            type="button"
+            disabled={deshabilitado}
+            onClick={(e) => {
+              e.stopPropagation();
+              abrirProducto(item);
+            }}
+            className={[
+              "mt-auto self-start rounded-full px-4.5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.08em] text-white",
+              "transition-transform duration-75 active:scale-94",
+              deshabilitado
+                ? "cursor-not-allowed bg-[#b7ad99]"
+                : "bg-casta hover:bg-casta-deep",
+            ].join(" ")}
+          >
+            {agotado ? "Agotado" : "Agregar +"}
+          </button>
+        </div>
+      </article>
+
+      {/* Hermano del article, NO hijo: React propaga los eventos por el árbol
+          de componentes, así que adentro el toque para cerrar subiría hasta el
+          onClick de la tarjeta y volvería a abrir la foto en el mismo toque. */}
+      {viendoFoto && fotoCompleta && (
+        <VisorFoto
+          src={fotoCompleta}
+          nombre={item.nombre}
+          onClose={() => setViendoFoto(false)}
+        />
+      )}
     </>
   );
 }
