@@ -16,12 +16,15 @@ import { VisorFoto } from "./VisorFoto";
  * costado. Es la misma decisión que en Promos y por el mismo motivo: a 78 px la
  * foto era un sello, no un producto.
  *
- * El banner es 4:3 y no 16:9 como el de las promos, y ahí está el detalle que
- * importa: estas fotos son VERTICALES, de un producto solo y centrado. En 16:9
- * la hamburguesa pierde el pan de arriba y el de abajo, y lo que queda es un
- * primer plano de textura que podría ser de cualquier hamburguesa del mundo.
- * En 4:3 entra entera, con el reflejo asomando. Las de promo aguantan 16:9
- * porque son composiciones horizontales.
+ * Va en 16:9, igual que las promos, aunque estas fotos sean verticales y eso
+ * signifique cortarle a la hamburguesa el pan de abajo. Es a propósito: el
+ * banner no está para inventariar el producto sino para dar hambre, y un plano
+ * cerrado sobre la carne, el queso derretido y la tocineta vende más que el
+ * sándwich entero visto de lejos. El que lo quiera completo toca la tarjeta y
+ * se abre la foto sin recortar — para eso está la lupa.
+ *
+ * Con las papas se ve mejor que con ninguna: de la mitad del empaque para abajo
+ * no hay nada que mirar, y ese espacio se lo comía la bolsa en vez de las papas.
  *
  * Agotado = tarjeta atenuada y botón deshabilitado (§3).
  */
@@ -60,7 +63,7 @@ export function MenuCard({ item }: { item: MenuItem }) {
         {/* Fondo negro y no hueso: la foto ya viene sobre negro, así que
             mientras carga no se ve un rectángulo claro que después se apaga. */}
         <div
-          className={`relative aspect-[4/3] w-full ${
+          className={`relative aspect-video w-full ${
             foto
               ? "bg-black"
               : "flex items-center justify-center bg-[repeating-linear-gradient(45deg,#e7dfce_0_8px,#ece5d6_8px_16px)]"
