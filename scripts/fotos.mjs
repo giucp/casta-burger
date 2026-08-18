@@ -72,7 +72,7 @@ const CALIDAD = 82;
 const RAIZ = join(import.meta.dirname, "..");
 const DESTINO = join(RAIZ, "public", "productos");
 
-const [origen, slug, forma = "producto"] = process.argv.slice(2);
+const [origen, slug, forma = "producto", desdeArriba] = process.argv.slice(2);
 
 if (!origen || !slug) {
   console.error(
@@ -101,8 +101,41 @@ await mkdir(DESTINO, { recursive: true });
 
 const { ancho, alto } = FORMAS[forma];
 
-const recorte = await sharp(origen)
-  .resize(ancho, alto, { fit: "cover", position: sharp.strategy.attention })
+/**
+ * Normalmente el encuadre lo elige sharp. Pero `attention` mira dónde hay más
+ * información, no dónde queda bonito, y con un producto que llena casi todo el
+ * cuadro puede pegarlo a un borde: la Casta Burger salía con el pan cortado al
+ * ras de arriba, mientras las otras tenían 40 px de aire.
+ *
+ * El cuarto argumento fuerza a qué altura del original empieza el recorte,
+ * medida en píxeles desde arriba. Se usa solo cuando hay que corregir a mano:
+ *
+ *   node scripts/fotos.mjs "<foto>" casta-burger producto 359
+ */
+let recortada;
+if (desdeArriba === undefined) {
+  recortada = sharp(origen).resize(ancho, alto, {
+    fit: "cover",
+    position: sharp.strategy.attention,
+  });
+} else {
+  const { width: anchoFuente = 0, height: altoFuente = 0 } =
+    await sharp(origen).metadata();
+
+  // La ventana usa todo el ancho del original y el alto que le toca según la
+  // proporción pedida, así el recorte solo decide la altura.
+  const altoVentana = Math.round((anchoFuente * alto) / ancho);
+  const tope = Math.max(
+    0,
+    Math.min(Math.round(Number(desdeArriba)), altoFuente - altoVentana),
+  );
+
+  recortada = sharp(origen)
+    .extract({ left: 0, top: tope, width: anchoFuente, height: altoVentana })
+    .resize(ancho, alto);
+}
+
+const recorte = await recortada
   .webp({ quality: CALIDAD })
   .toFile(join(DESTINO, `${slug}.webp`));
 
