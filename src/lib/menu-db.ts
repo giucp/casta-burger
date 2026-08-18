@@ -27,6 +27,19 @@ function aNumero(v: string | number | null): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+/**
+ * Le cuelga la versión del despliegue a la ruta de una foto.
+ *
+ * Las fotos se guardan con nombre fijo (`casta-burger.webp`) y se cachean una
+ * semana. Sin esto, corregir una foto no se vería hasta que venciera el plazo:
+ * misma URL, el navegador ni pregunta. Con la versión, cada despliegue estrena
+ * dirección y la foto nueva se ve al instante.
+ */
+function conVersion(ruta: string | null): string | undefined {
+  if (!ruta) return undefined;
+  return `${ruta}?v=${process.env.NEXT_PUBLIC_VERSION_FOTOS ?? "dev"}`;
+}
+
 function aMenuItem(f: FilaMenu): MenuItem {
   const suelto = aNumero(f.precio_suelto);
   return {
@@ -37,8 +50,8 @@ function aMenuItem(f: FilaMenu): MenuItem {
     precio: aNumero(f.precio),
     precioSuelto: suelto ?? undefined,
     categoria: f.categoria as Categoria,
-    fotoUrl: f.foto_url ?? undefined,
-    fotoCompletaUrl: f.foto_completa_url ?? undefined,
+    fotoUrl: conVersion(f.foto_url),
+    fotoCompletaUrl: conVersion(f.foto_completa_url),
     disponible: f.disponible,
     orden: f.orden,
     tags: f.tags ?? [],
