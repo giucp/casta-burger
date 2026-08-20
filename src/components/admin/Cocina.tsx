@@ -74,18 +74,71 @@ function TarjetaPedido({
 
       <ul className="px-4 py-3">
         {pedido.lineas.map((linea) => (
-          <li key={linea.id} className="mb-2.5 last:mb-0">
-            <p className="text-[15px] font-semibold leading-tight">
-              <span className="font-mono text-casta">{linea.cantidad}×</span>{" "}
-              {linea.nombre}
+          <li
+            key={linea.id}
+            // Cada producto separado por una línea: leído rápido y de lejos,
+            // una lista corrida invita a saltarse un renglón.
+            className="border-b border-white/8 py-2.5 first:pt-0 last:border-0 last:pb-0"
+          >
+            <p className="flex items-baseline gap-2 text-[15px] font-semibold leading-tight">
+              {/* La cantidad es el dato que más caro sale confundir: va
+                  primero, grande y en rojo. */}
+              <span className="font-mono text-xl font-bold text-casta">
+                {linea.cantidad}×
+              </span>
+              <span className="min-w-0 flex-1">
+                {linea.esPromo && (
+                  <span className="mr-1.5 rounded bg-casta px-1.5 py-0.5 align-middle font-mono text-[10px] font-bold uppercase tracking-[0.08em] text-white">
+                    Promo
+                  </span>
+                )}
+                {linea.nombre}
+              </span>
             </p>
-            {linea.opciones.length > 0 && (
-              <p className="font-mono text-[11px] uppercase tracking-[0.04em] text-ash">
-                {linea.opciones.join(" · ")}
+
+            {/* Qué trae la promo. Es LA línea que evita entregar una
+                hamburguesa cuando el cliente pagó dos. */}
+            {linea.esPromo && linea.incluye && (
+              <p className="mt-1 rounded border border-casta/40 bg-casta/10 px-2 py-1 text-[12.5px] leading-snug text-white">
+                <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-casta">
+                  Incluye{" "}
+                </span>
+                {linea.incluye}
               </p>
             )}
+
+            {/* Proteína y extras separados y etiquetados: la proteína es una
+                ELECCIÓN, los extras son cosas que hay que AGREGAR. Antes iban
+                aplanados en la misma fila de puntos. */}
+            {linea.proteina && (
+              <p className="mt-1 flex items-baseline gap-1.5">
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+                  Proteína
+                </span>
+                <span className="font-mono text-[12.5px] font-bold uppercase tracking-[0.04em] text-white">
+                  {linea.proteina}
+                </span>
+              </p>
+            )}
+
+            {linea.extras.length > 0 && (
+              <p className="mt-1 flex flex-wrap items-baseline gap-1.5">
+                <span className="shrink-0 font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+                  Extras
+                </span>
+                {linea.extras.map((extra) => (
+                  <span
+                    key={extra}
+                    className="rounded bg-sky-500/15 px-1.5 py-0.5 font-mono text-[11.5px] font-bold uppercase tracking-[0.04em] text-sky-300"
+                  >
+                    + {extra}
+                  </span>
+                ))}
+              </p>
+            )}
+
             {linea.nota && (
-              <p className="mt-0.5 rounded bg-amber-500/15 px-2 py-0.5 text-[12px] font-medium text-amber-300">
+              <p className="mt-1 rounded bg-amber-500/15 px-2 py-0.5 text-[12.5px] font-medium text-amber-300">
                 <span className="font-mono text-[10px] uppercase tracking-[0.1em] opacity-80">
                   Nota{" "}
                 </span>

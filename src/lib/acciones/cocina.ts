@@ -27,6 +27,8 @@ type FilaLinea = {
   opciones: {
     proteina?: string;
     extras?: { nombre?: string }[] | string[];
+    esPromo?: boolean;
+    incluye?: string;
   } | null;
 };
 
@@ -46,20 +48,15 @@ type FilaPedido = {
 
 const num = (v: string | number) => (typeof v === "number" ? v : Number(v));
 
-/** Proteína y extras en texto, listos para la tarjeta de cocina. */
-function describir(opciones: FilaLinea["opciones"]): string[] {
-  if (!opciones) return [];
-  const partes: string[] = [];
-
-  if (opciones.proteina) partes.push(opciones.proteina);
-
-  for (const extra of opciones.extras ?? []) {
+/** Los extras en texto, para la comanda. */
+function nombresDeExtras(opciones: FilaLinea["opciones"]): string[] {
+  const nombres: string[] = [];
+  for (const extra of opciones?.extras ?? []) {
     // Los pedidos viejos guardaban solo el id del extra. Se ignoran en vez de
     // mostrar un UUID en la pantalla de la cocina.
-    if (typeof extra === "object" && extra.nombre) partes.push(extra.nombre);
+    if (typeof extra === "object" && extra.nombre) nombres.push(extra.nombre);
   }
-
-  return partes;
+  return nombres;
 }
 
 function aPedido(f: FilaPedido): Pedido {
@@ -79,7 +76,10 @@ function aPedido(f: FilaPedido): Pedido {
         id: l.id,
         nombre: l.nombre,
         cantidad: l.cantidad,
-        opciones: describir(l.opciones),
+        proteina: l.opciones?.proteina,
+        extras: nombresDeExtras(l.opciones),
+        esPromo: l.opciones?.esPromo ?? false,
+        incluye: l.opciones?.incluye,
         nota: l.nota ?? undefined,
         subtotal: num(l.subtotal),
       }),

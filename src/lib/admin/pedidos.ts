@@ -83,13 +83,29 @@ export function antiguedad(creadoISO: string, ahora: number): string {
   return `hace ${Math.floor(min / 60)} h`;
 }
 
-/** Una línea del pedido, como la ve la cocina. */
+/**
+ * Una línea de la comanda, con cada dato por separado.
+ *
+ * Antes esto era `opciones: string[]` con la proteína y los extras aplanados
+ * en la misma lista. En la cocina eso se lee "Carne · Tocineta adicional" y no
+ * hay forma de saber qué eligió el cliente y qué hay que agregarle. Se
+ * despacharon dos pedidos mal por leer así.
+ *
+ * `esPromo` e `incluye` vienen copiados en el pedido desde que se creó, no del
+ * menú de hoy: una comanda tiene que decir lo mismo el día que entró y un mes
+ * después, aunque el producto se haya renombrado.
+ */
 export type LineaPedido = {
   id: string;
   nombre: string;
   cantidad: number;
-  /** Proteína y extras, ya en texto legible */
-  opciones: string[];
+  /** La eligió el cliente */
+  proteina?: string;
+  /** Hay que AGREGARLOS. Cada uno es una acción en la plancha. */
+  extras: string[];
+  esPromo: boolean;
+  /** Qué trae la promo, con sus palabras del menú */
+  incluye?: string;
   nota?: string;
   subtotal: number;
 };

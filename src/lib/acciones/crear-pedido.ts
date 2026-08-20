@@ -131,6 +131,14 @@ export async function crearPedido(
   type OpcionesGuardadas = {
     proteina?: Proteina;
     extras: { id: string; nombre: string; precio: number }[];
+    /**
+     * Si el producto es una promo y qué trae. Se copian acá, junto al nombre y
+     * al precio, en vez de mirarlos en el menú al leer el pedido: un producto
+     * se puede renombrar o borrar, y una comanda vieja tiene que seguir
+     * diciendo lo mismo que decía el día que entró.
+     */
+    esPromo?: boolean;
+    incluye?: string;
   };
 
   const items: {
@@ -170,13 +178,21 @@ export async function crearPedido(
 
     unitario = Math.round(unitario * 100) / 100;
 
+    const esPromo = producto.categoria === "Promos";
+
     items.push({
       menu_item_id: producto.id,
       nombre: producto.nombre,
       precio: unitario,
       cantidad: linea.cantidad,
       subtotal: Math.round(unitario * linea.cantidad * 100) / 100,
-      opciones: { proteina: linea.opciones.proteina, extras: extrasResueltos },
+      opciones: {
+        proteina: linea.opciones.proteina,
+        extras: extrasResueltos,
+        ...(esPromo
+          ? { esPromo: true, incluye: producto.descripcion ?? undefined }
+          : {}),
+      },
       nota: linea.nota?.trim() || null,
     });
   }
@@ -244,24 +260,17 @@ export async function crearPedido(
       cliente: datos.nombre.trim(),
       telefono: datos.telefono.trim(),
       direccion: direccionFinal,
-      lineas: items.map((i) => {
-        // La descripción y la categoría no se copian en `order_items`, así que
-        // se leen del menú que ya trajimos para calcular los precios.
-        const producto = porId.get(i.menu_item_id) as
-          | { descripcion?: string | null; categoria?: string | null }
-          | undefined;
-        return {
-          cantidad: i.cantidad,
-          nombre: i.nombre,
-          esPromo: producto?.categoria === "Promos",
-          incluye: producto?.descripcion ?? null,
-          proteina: i.opciones.proteina ?? null,
-          extras: i.opciones.extras.map(
-            (e) => `${e.nombre} (+${e.precio.toFixed(2)})`,
-          ),
-          nota: i.nota,
-        };
-      }),
+      lineas: items.map((i) => ({
+        cantidad: i.cantidad,
+        nombre: i.nombre,
+        esPromo: i.opciones.esPromo ?? false,
+        incluye: i.opciones.incluye ?? null,
+        proteina: i.opciones.proteina ?? null,
+        extras: i.opciones.extras.map(
+          (e) => `${e.nombre} (+$${e.precio.toFixed(2)})`,
+        ),
+        nota: i.nota,
+      })),
     }),
   );
 
