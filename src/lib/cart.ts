@@ -1,4 +1,4 @@
-import type { MenuItem, Proteina } from "./menu";
+import type { Categoria, MenuItem, Proteina } from "./menu";
 
 /** Un extra ya elegido: viaja con su nombre y precio. */
 export type ExtraElegido = {
@@ -29,6 +29,17 @@ export type LineaCarrito = {
   key: string;
   menuItemId: string;
   nombre: string;
+  /**
+   * Categoría y descripción viajan con la línea para que el mensaje de
+   * WhatsApp pueda explicar qué es cada cosa. Sobre todo las promos: en la
+   * base son un producto más, así que sin la descripción el mensaje solo dice
+   * "2x1 en Cheese Burger" y hay que adivinar cuántas hamburguesas salen.
+   *
+   * Opcionales porque un carrito guardado antes de este cambio no las tiene.
+   * En ese caso el mensaje sale como salía antes, no roto.
+   */
+  categoria?: Categoria;
+  descripcion?: string;
   /** Precio de UNA unidad, ya con los extras incluidos */
   precioUnitario: number;
   cantidad: number;

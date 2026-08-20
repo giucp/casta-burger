@@ -22,19 +22,51 @@ type AvisoPedido = {
   cliente: string;
   telefono: string;
   direccion?: string | null;
-  lineas: { cantidad: number; nombre: string; opciones: string[] }[];
+  lineas: {
+    cantidad: number;
+    nombre: string;
+    /** Qué trae la promo. Solo viene en las promos. */
+    incluye?: string | null;
+    /** La eligió el cliente */
+    proteina?: string | null;
+    /** Se pagan aparte */
+    extras: string[];
+    nota?: string | null;
+    esPromo: boolean;
+  }[];
 };
 
+/**
+ * Cada ítem en bloque, con los datos etiquetados.
+ *
+ * Mismo criterio que el mensaje de WhatsApp, y por el mismo motivo: aplanar
+ * todo en una fila de comas —"Pollo, Tocineta adicional"— esconde qué eligió
+ * el cliente y qué agregó, y deja las promos con el nombre pelado.
+ */
 function componerMensaje(p: AvisoPedido): string {
+  const unidades = p.lineas.reduce((s, l) => s + l.cantidad, 0);
   const l: string[] = [];
-  l.push(`🔔 *Pedido #${p.numero}* — ${p.tipo === "delivery" ? "Delivery" : "Retiro"}`);
-  l.push("");
+
+  l.push(
+    `🔔 *Pedido #${p.numero}* — ${p.tipo === "delivery" ? "Delivery" : "Retiro"}`,
+  );
+  l.push(`${unidades} ${unidades === 1 ? "producto" : "productos"}`);
+
   for (const linea of p.lineas) {
-    l.push(`• ${linea.cantidad}× ${linea.nombre}`);
-    if (linea.opciones.length > 0) l.push(`   _${linea.opciones.join(", ")}_`);
+    l.push("");
+    l.push(
+      `*${linea.cantidad}×* ${linea.esPromo ? "PROMO · " : ""}${linea.nombre}`,
+    );
+    if (linea.esPromo && linea.incluye)
+      l.push(`      Incluye: ${linea.incluye}`);
+    if (linea.proteina) l.push(`      Proteína: ${linea.proteina}`);
+    if (linea.extras.length > 0)
+      l.push(`      Extras: ${linea.extras.join(" · ")}`);
+    if (linea.nota) l.push(`      *Nota: ${linea.nota}*`);
   }
+
   l.push("");
-  l.push(`*Total: ${p.total}*`);
+  l.push(`*TOTAL: ${p.total}*`);
   l.push(`${p.cliente} · ${p.telefono}`);
   if (p.tipo === "delivery" && p.direccion) l.push(p.direccion);
   return l.join("\n");

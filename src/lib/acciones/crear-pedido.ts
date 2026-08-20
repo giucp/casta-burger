@@ -113,7 +113,7 @@ export async function crearPedido(
 
   const { data: productos, error: errorMenu } = await supabase
     .from("menu_items")
-    .select("id, nombre, precio, disponible")
+    .select("id, nombre, precio, disponible, descripcion, categoria")
     .in("id", ids);
 
   if (errorMenu || !productos)
@@ -244,14 +244,24 @@ export async function crearPedido(
       cliente: datos.nombre.trim(),
       telefono: datos.telefono.trim(),
       direccion: direccionFinal,
-      lineas: items.map((i) => ({
-        cantidad: i.cantidad,
-        nombre: i.nombre,
-        opciones: [
-          i.opciones.proteina,
-          ...i.opciones.extras.map((e) => e.nombre),
-        ].filter((x): x is string => Boolean(x)),
-      })),
+      lineas: items.map((i) => {
+        // La descripción y la categoría no se copian en `order_items`, así que
+        // se leen del menú que ya trajimos para calcular los precios.
+        const producto = porId.get(i.menu_item_id) as
+          | { descripcion?: string | null; categoria?: string | null }
+          | undefined;
+        return {
+          cantidad: i.cantidad,
+          nombre: i.nombre,
+          esPromo: producto?.categoria === "Promos",
+          incluye: producto?.descripcion ?? null,
+          proteina: i.opciones.proteina ?? null,
+          extras: i.opciones.extras.map(
+            (e) => `${e.nombre} (+${e.precio.toFixed(2)})`,
+          ),
+          nota: i.nota,
+        };
+      }),
     }),
   );
 

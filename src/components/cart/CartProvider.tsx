@@ -98,6 +98,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             key,
             menuItemId: item.id,
             nombre: item.nombre,
+            categoria: item.categoria,
+            descripcion: item.descripcion,
             precioUnitario: precioUnitario(item, opciones),
             cantidad,
             opciones,
