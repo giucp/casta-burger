@@ -70,7 +70,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Compras reales: registrar y borrar contra la base
-- [x] Números reales: ventas (= pedidos entregados), compras y ganancia por día
+- [x] Números reales: ventas (= todo pedido no cancelado), compras y ganancia por día
 - [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
       cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
 - [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
@@ -215,6 +215,32 @@ script se baja las fuentes la primera vez y el JPG resultante queda commiteado.
 Ojo con las pruebas: **WhatsApp cachea la vista previa** de cada link por
 bastante tiempo. Si el link ya se compartió antes, para ver la tarjeta nueva hay
 que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
+
+## Un pedido de prueba se borra cancelándolo
+
+`ventas_por_dia` suma **todo pedido cuyo estado no sea `cancelado`**, no solo
+los entregados. Así que un pedido de prueba infla las ventas del día desde que
+entra, sin necesidad de despacharlo.
+
+Cancelarlo lo saca de las tres cifras —ventas, pedidos y ganancia— sin borrar
+nada: el pedido queda en la base y el histórico no miente. Pero el botón
+**Cancelar de la cocina solo aparece mientras el pedido está en `nuevo`**.
+Pasado ese punto no hay forma de cancelarlo desde el panel, y hay que ir al SQL
+Editor de Supabase:
+
+```sql
+-- Ver primero qué se va a tocar
+select numero, cliente_nombre, total, estado, created_at from orders
+where (created_at at time zone 'America/Caracas')::date = current_date
+order by numero;
+
+-- Y recién ahí, por número, uno por uno
+update orders set estado = 'cancelado' where numero = 000;
+```
+
+Es a propósito que no haya un botón de cancelar en cualquier estado: en plena
+noche de servicio, al lado de "Listo", sería el botón que borra una venta de
+verdad por un toque mal dado.
 
 ## Pendientes conocidos
 
