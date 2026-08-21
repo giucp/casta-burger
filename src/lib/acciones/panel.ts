@@ -17,6 +17,12 @@ export type PanelHoy = {
   activos: Pedido[];
   /** Entregados de hoy, los más recientes primero */
   entregadosHoy: Pedido[];
+  /**
+   * Anulados de hoy. Van aparte y no mezclados con los entregados porque no
+   * suman a las ventas: mostrarlos en la misma lista sería mostrar plata que
+   * no entró. Están para poder devolverlos si se anuló uno por error.
+   */
+  anuladosHoy: Pedido[];
   /** La fila financiera de hoy */
   resumen: ResumenDia;
   /** Historial de los últimos 14 días */
@@ -46,9 +52,10 @@ export async function panelHoy(): Promise<PanelHoy> {
     // Los más viejos primero: son los que más urgen
     .sort((a, b) => a.numero - b.numero);
 
-  const entregadosHoy = pedidos.filter(
-    (p) => p.estado === "entregado" && diaCaracas(new Date(p.creadoISO)) === hoy,
-  );
+  const deHoy = (p: Pedido) => diaCaracas(new Date(p.creadoISO)) === hoy;
+
+  const entregadosHoy = pedidos.filter((p) => p.estado === "entregado" && deHoy(p));
+  const anuladosHoy = pedidos.filter((p) => p.estado === "cancelado" && deHoy(p));
 
   const resumen = historico.find((f) => f.dia === hoy) ?? {
     dia: hoy,
@@ -62,6 +69,7 @@ export async function panelHoy(): Promise<PanelHoy> {
     hoy,
     activos,
     entregadosHoy,
+    anuladosHoy,
     resumen,
     historico,
     bajoStock: inventario.filter((i) => i.cantidad <= i.umbralAlerta),

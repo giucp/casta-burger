@@ -9,6 +9,7 @@ import {
   type Pedido,
 } from "@/lib/admin/pedidos";
 import { panelHoy, type PanelHoy } from "@/lib/acciones/panel";
+import { anularVenta, restaurarVenta } from "@/lib/acciones/ventas";
 import { linkWhatsAppCliente } from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
 import { TextoConEnlaces } from "./TextoConEnlaces";
@@ -19,9 +20,14 @@ import { useAhora } from "./useAhora";
  * pedidos, qué hay en juego ahora mismo, cuánto se vendió hoy, y el teléfono
  * de cada cliente a un toque para cobrar por WhatsApp.
  *
- * Solo lectura a propósito: los estados los maneja la cocina. Dos personas
- * avanzando el mismo pedido desde pantallas distintas es receta para
- * entregar dos veces.
+ * No avanza pedidos a propósito: eso lo maneja la cocina. Dos personas
+ * moviendo el mismo pedido desde pantallas distintas es receta para entregar
+ * dos veces.
+ *
+ * Lo único que sí se toca desde acá son los números: anular una venta que no
+ * fue y devolver una anulada por error. No es la misma cosa — un pedido ya
+ * entregado o ya anulado terminó, la cocina no tiene nada más que hacer con
+ * él, y corregir la plata del día es trabajo del dueño y de nadie más.
  */
 export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
   const [panel, setPanel] = useState(inicial);
@@ -173,9 +179,54 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
       ) : (
         <ul className="mb-6 overflow-hidden rounded-card border border-white/8">
           {panel.entregadosHoy.map((p) => (
-            <FilaPedido key={p.id} pedido={p} ahora={ahora} compacta />
+            <FilaPedido
+              key={p.id}
+              pedido={p}
+              ahora={ahora}
+              compacta
+              accion={{
+                etiqueta: "Anular venta",
+                confirmar: "¿Seguro? Anular",
+                correr: async () => {
+                  const r = await anularVenta(p.id);
+                  if (r.ok) await refrescar();
+                  else alert(r.error);
+                },
+              }}
+            />
           ))}
         </ul>
+      )}
+
+      {/*
+        Solo aparece si hay alguno. Un cartel de "no hay pedidos anulados"
+        todos los días sería recordarle al dueño un problema que no tiene.
+      */}
+      {panel.anuladosHoy.length > 0 && (
+        <>
+          <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
+            Anulados hoy ({panel.anuladosHoy.length}) · no cuentan como venta
+          </h2>
+          <ul className="mb-6 overflow-hidden rounded-card border border-white/8 opacity-60">
+            {panel.anuladosHoy.map((p) => (
+              <FilaPedido
+                key={p.id}
+                pedido={p}
+                ahora={ahora}
+                compacta
+                accion={{
+                  etiqueta: "Devolver a ventas",
+                  confirmar: "¿Seguro? Devolver",
+                  correr: async () => {
+                    const r = await restaurarVenta(p.id);
+                    if (r.ok) await refrescar();
+                    else alert(r.error);
+                  },
+                }}
+              />
+            ))}
+          </ul>
+        </>
       )}
 
       <h2 className="mb-3 font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
@@ -281,11 +332,16 @@ function FilaPedido({
   pedido,
   ahora,
   compacta = false,
+  accion,
 }: {
   pedido: Pedido;
   ahora: number | null;
   compacta?: boolean;
+  /** Corrección de los números. Sin esto la fila es de solo lectura. */
+  accion?: { etiqueta: string; confirmar: string; correr: () => Promise<void> };
 }) {
+  const [armado, setArmado] = useState(false);
+  const [corriendo, setCorriendo] = useState(false);
   const info = ESTADO_INFO[pedido.estado];
   const waCliente = linkWhatsAppCliente(pedido.clienteTel);
   const items = pedido.lineas
@@ -334,6 +390,31 @@ function FilaPedido({
           >
             Cobrar por WhatsApp
           </a>
+        )}
+
+        {accion && (
+          <button
+            type="button"
+            disabled={corriendo}
+            onClick={() => {
+              // Es plata: nunca en un solo toque. El segundo toque confirma.
+              if (!armado) return setArmado(true);
+              setCorriendo(true);
+              void accion.correr().finally(() => {
+                setCorriendo(false);
+                setArmado(false);
+              });
+            }}
+            onBlur={() => setArmado(false)}
+            className={[
+              "rounded-full border px-2.5 py-0.5 uppercase tracking-[0.06em] transition-colors disabled:opacity-50",
+              armado
+                ? "border-casta bg-casta text-white"
+                : "border-white/20 hover:border-casta hover:text-casta",
+            ].join(" ")}
+          >
+            {corriendo ? "…" : armado ? accion.confirmar : accion.etiqueta}
+          </button>
         )}
       </div>
     </li>

@@ -71,6 +71,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Compras reales: registrar y borrar contra la base
 - [x] Números reales: ventas (= todo pedido no cancelado), compras y ganancia por día
+- [x] El dueño puede anular una venta del día y devolverla si se equivocó
 - [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
       cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
 - [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
@@ -216,31 +217,34 @@ Ojo con las pruebas: **WhatsApp cachea la vista previa** de cada link por
 bastante tiempo. Si el link ya se compartió antes, para ver la tarjeta nueva hay
 que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
 
-## Un pedido de prueba se borra cancelándolo
+## Anular una venta, y devolverla
 
 `ventas_por_dia` suma **todo pedido cuyo estado no sea `cancelado`**, no solo
-los entregados. Así que un pedido de prueba infla las ventas del día desde que
-entra, sin necesidad de despacharlo.
+los entregados. Así que un pedido que no fue infla las ventas del día desde que
+entra, sin necesidad de despacharlo — y un pedido de prueba, también.
 
-Cancelarlo lo saca de las tres cifras —ventas, pedidos y ganancia— sin borrar
-nada: el pedido queda en la base y el histórico no miente. Pero el botón
-**Cancelar de la cocina solo aparece mientras el pedido está en `nuevo`**.
-Pasado ese punto no hay forma de cancelarlo desde el panel, y hay que ir al SQL
-Editor de Supabase:
+En el panel del dueño, cada entregado de hoy tiene **Anular venta**, y los
+anulados salen en su propia lista con **Devolver a ventas**. Los dos botones
+piden un segundo toque para confirmar: es plata, no se toca de un golpe.
 
-```sql
--- Ver primero qué se va a tocar
-select numero, cliente_nombre, total, estado, created_at from orders
-where (created_at at time zone 'America/Caracas')::date = current_date
-order by numero;
+Tres decisiones detrás de esto:
 
--- Y recién ahí, por número, uno por uno
-update orders set estado = 'cancelado' where numero = 000;
-```
-
-Es a propósito que no haya un botón de cancelar en cualquier estado: en plena
-noche de servicio, al lado de "Listo", sería el botón que borra una venta de
-verdad por un toque mal dado.
+- **Anula, no borra.** Cancelar saca el pedido de las tres cifras —ventas,
+  pedidos y ganancia— pero la fila queda en la base con su número, su cliente
+  y su comanda. Un negocio no borra pedidos: los anula.
+- **Está en el panel del dueño, no en la cocina.** La cocina sigue sin poder
+  hacerlo: su botón Cancelar existe solo mientras el pedido está en `nuevo`, y
+  se queda así. En plena noche de servicio, pegado a "Listo", un botón que
+  borra ventas es el que se toca por error. La acción del servidor además
+  pregunta `mi_rol()` y rechaza a quien no sea `dueno`, porque el RLS deja que
+  la cocina cambie estados —lo necesita para despachar— y sin esa pregunta el
+  cocinero podría vaciar las ventas del día llamando a la acción directo.
+- **Cada acción exige de dónde viene.** Anular solo toma `entregado`, devolver
+  solo toma `cancelado`, y la condición viaja dentro del mismo `UPDATE`
+  (`.eq("estado", desde)`). Leer el estado y después escribir dejaría una
+  rendija: entre las dos cosas la cocina puede haber movido el pedido, y el
+  panel lo pisaría igual. Un pedido en juego no se anula desde acá ni por
+  error.
 
 ## Pendientes conocidos
 
