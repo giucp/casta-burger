@@ -48,8 +48,13 @@ export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
  * Se puso en `false` el 14 de agosto de 2026, al empezar a operar de verdad.
  * Solo tiene sentido volver a `true` para mostrar el flujo completo un martes a
  * las 3 PM, y hay que acordarse de devolverlo.
+ *
+ * TEMPORAL: en `true` desde el 21 de agosto de 2026 para poder probar la
+ * pantalla de cocina en vivo fuera del horario. Devolver a `false` al terminar
+ * la prueba — mientras esté así, cualquiera que entre a la web puede pedir a
+ * cualquier hora y el pedido va a caer en la cocina de verdad.
  */
-export const MODO_DEMO = false;
+export const MODO_DEMO = true;
 
 /**
  * Horario de atención: jueves a domingo, 6:00–11:00 PM (hora de Caracas).
