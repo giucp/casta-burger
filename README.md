@@ -81,7 +81,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Aviso por Telegram al entrar un pedido (activable con el token del bot)
 - [x] La web recuerda los datos del cliente en su teléfono (sin cuenta)
 - [x] Delivery con ubicación GPS compartida como en WhatsApp
-- [x] PWA instalable: ícono y nombre propios, se agrega a la pantalla de inicio
+- [x] Tres PWA instalables por separado: la web del cliente, el admin y la cocina
 - [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
 - [x] Tarjeta de compartir: al pegar el link en WhatsApp sale la marca, no un cuadro vacío
 - [x] Horario de verdad: fuera de jue–dom 6–11 PM no se puede pedir, la web se
@@ -143,6 +143,62 @@ si el visitante pidió ahorrar datos o está en una conexión lenta. Por eso el
 visor las muestra `unoptimized`: así pide el archivo tal cual, que es la misma
 URL que quedó en el caché. Si pasara por el optimizador de Next, la precarga
 estaría calentando una URL que el visor nunca pide.
+
+## Las tres apps instalables
+
+El mismo dominio ofrece **tres** apps distintas, y cuál se instala depende de
+en qué página estés parado cuando tocás "instalar":
+
+| Desde | App | Arranca en | Ícono |
+|---|---|---|---|
+| la web pública | Casta Burger | `/` | logo rojo sobre negro |
+| cualquier pantalla de `/admin` | Casta Admin | `/admin` | logo hueso sobre rojo casta |
+| `/admin/cocina` | Casta Cocina | `/admin/cocina` | logo hueso sobre grafito |
+
+El dueño y el cocinero terminan con iconos separados en la pantalla de inicio,
+cada uno abriendo donde tiene que abrir. El cocinero no tiene que pasar por el
+menú del cliente ni por el panel para llegar a los pedidos.
+
+**Cómo está armado.** La convención `manifest.ts` de Next solo vale en la raíz
+de `app/`, así que ahí vive el del cliente
+([`src/app/manifest.ts`](src/app/manifest.ts)) y los otros dos se sirven como
+route handlers, con el contenido en
+[`src/lib/manifiestos.ts`](src/lib/manifiestos.ts). Se enganchan
+sobreescribiendo `metadata.manifest`: el layout del panel pone el del admin y
+la página de cocina lo vuelve a pisar con el suyo. La metadata anidada
+reemplaza la del padre campo por campo — es la regla de Next la que hace todo
+esto posible sin duplicar nada.
+
+Tres decisiones que parecen detalles y no lo son:
+
+- **Los manifests cuelgan de la raíz**, no de `/admin`. El middleware rebota al
+  login todo lo que cuelgue de `/admin` sin sesión, y además manda al rol
+  `cocina` a su pantalla desde cualquier otra ruta. Un manifest que responde un
+  redirect no instala nada. Dónde esté guardado el archivo no tiene que ver con
+  su `scope`.
+- **Las dos apps del back-office comparten `scope: "/admin"`.** Acotar la
+  cocina a `/admin/cocina` sería lo natural, pero dejaría el login afuera: al
+  abrir la app sin sesión el middleware redirige a `/admin/login` y el navegador,
+  viendo una URL fuera de scope, la abriría en una pestaña normal. Lo que separa
+  las dos apps es el `id`, no el scope.
+- **iOS no lee el manifest.** Ni `id`, ni `scope`, ni `start_url`: "Agregar a
+  inicio" usa la URL abierta y el `apple-touch-icon` que declare esa página, y
+  el nombre sale del `apple-mobile-web-app-title`. Por eso `metadataApple()` se
+  repite por app. Se instalan igual como apps separadas, pero cada una arranca
+  con su propia sesión — hay que entrar una vez dentro de cada app instalada.
+
+Los iconos se generan con:
+
+```bash
+node scripts/iconos.mjs
+```
+
+El trazo no está copiado en el script: lo lee de
+[`LogoMarca.tsx`](src/components/LogoMarca.tsx), así que el día que el
+diseñador mande el SVG bueno y se reemplace allá, los iconos lo siguen solos.
+Los del cliente **no** los toca a propósito: ya están instalados en teléfonos
+de clientes y cambiarle el ícono a una app instalada es cambiarle la cara a
+algo que la gente ya reconoce.
 
 ## La imagen de compartir
 

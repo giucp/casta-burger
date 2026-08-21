@@ -3,7 +3,18 @@ import { redirect } from "next/navigation";
 import { LogoMarca } from "@/components/LogoMarca";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BotonSalir } from "@/components/admin/BotonSalir";
+import { APP_ADMIN, metadataApple } from "@/lib/manifiestos";
 import { createClient } from "@/lib/supabase/server";
+
+/**
+ * Todo el panel ofrece instalarse como "Casta Admin", con su propio ícono y
+ * arrancando en /admin — no como la web del cliente. La página de cocina
+ * vuelve a pisar esto con el suyo.
+ */
+export const metadata = {
+  manifest: "/manifest-admin.webmanifest",
+  ...metadataApple(APP_ADMIN),
+};
 
 /**
  * Shell del back-office.

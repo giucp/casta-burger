@@ -12,7 +12,20 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: BUSINESS.nombre,
     description:
       "Hamburguesas smash de verdad en Barinas. Pide por acá y recógela, o te la llevamos.",
+    id: "/",
     start_url: "/",
+    /**
+     * `id` y `scope` no estaban y ahora sí, porque ya no es el único manifest:
+     * `/manifest-admin.webmanifest` y `/manifest-cocina.webmanifest` declaran
+     * las dos apps del back-office. El `id` es lo que el navegador usa como
+     * identidad de una app instalada — con tres manifests conviene que cada uno
+     * diga el suyo en vez de dejar que se deduzca.
+     *
+     * Vale la pena decir que esto NO le cambia la identidad a quien ya tenga la
+     * app instalada: sin `id`, el navegador usa el `start_url`, que acá es el
+     * mismo "/". Escribirlo solo hace explícito lo que ya valía.
+     */
+    scope: "/",
     display: "standalone",
     background_color: "#0C0C0C",
     theme_color: "#0C0C0C",

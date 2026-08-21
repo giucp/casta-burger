@@ -1,8 +1,18 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/admin/LoginForm";
 import { LogoMarca } from "@/components/LogoMarca";
+import { APP_ADMIN, metadataApple } from "@/lib/manifiestos";
 
-export const metadata = { title: "Entrar — Casta Admin" };
+/**
+ * El login queda fuera del grupo `(panel)`, así que no hereda su metadata.
+ * Sin esto, instalar desde la pantalla de entrada dejaría en el teléfono la
+ * app del cliente — con su ícono y arrancando en el menú.
+ */
+export const metadata = {
+  title: "Entrar — Casta Admin",
+  manifest: "/manifest-admin.webmanifest",
+  ...metadataApple(APP_ADMIN),
+};
 
 export default function LoginPage() {
   return (
