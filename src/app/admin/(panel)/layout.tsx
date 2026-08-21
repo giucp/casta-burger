@@ -19,7 +19,7 @@ export const metadata = {
 /**
  * Shell del back-office.
  *
- * El middleware ya filtró, y acá se vuelve a comprobar. No es redundancia
+ * El proxy ya filtró, y acá se vuelve a comprobar. No es redundancia
  * inútil: son tres cosas distintas.
  *
  * - `getUser()` confirma contra el servidor de Auth que la cuenta siga

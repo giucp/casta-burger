@@ -66,7 +66,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Carrito + selector de proteína y extras
 - [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp
 - [x] Guardar el pedido, con N° y total calculados en el servidor
-- [x] Auth con contraseña, `/admin` protegido por middleware y por RLS
+- [x] Auth con contraseña, `/admin` protegido por el proxy y por RLS
 - [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
 - [x] Inventario real: agregar, editar, ajustar y borrar contra la base
 - [x] Compras reales: registrar y borrar contra la base
@@ -171,14 +171,14 @@ esto posible sin duplicar nada.
 
 Tres decisiones que parecen detalles y no lo son:
 
-- **Los manifests cuelgan de la raíz**, no de `/admin`. El middleware rebota al
+- **Los manifests cuelgan de la raíz**, no de `/admin`. El proxy rebota al
   login todo lo que cuelgue de `/admin` sin sesión, y además manda al rol
   `cocina` a su pantalla desde cualquier otra ruta. Un manifest que responde un
   redirect no instala nada. Dónde esté guardado el archivo no tiene que ver con
   su `scope`.
 - **Las dos apps del back-office comparten `scope: "/admin"`.** Acotar la
   cocina a `/admin/cocina` sería lo natural, pero dejaría el login afuera: al
-  abrir la app sin sesión el middleware redirige a `/admin/login` y el navegador,
+  abrir la app sin sesión el proxy redirige a `/admin/login` y el navegador,
   viendo una URL fuera de scope, la abriría en una pestaña normal. Lo que separa
   las dos apps es el `id`, no el scope.
 - **iOS no lee el manifest.** Ni `id`, ni `scope`, ni `start_url`: "Agregar a
@@ -274,7 +274,8 @@ los números ni repartir accesos.
 
 Son tres cierres, y el que importa es el último:
 
-1. El middleware pregunta `es_admin()` antes de dejar ver `/admin`.
+1. El proxy ([`src/proxy.ts`](src/proxy.ts)) pregunta `mi_rol()` antes de
+   dejar ver `/admin`.
 2. El layout del panel lo vuelve a preguntar.
 3. **El RLS de la base lo pregunta en cada consulta.** Esta es la frontera de
    verdad: sin estar en `admins` no se lee ni se escribe nada, ni entrando al
