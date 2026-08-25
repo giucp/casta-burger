@@ -128,7 +128,16 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
                   bajo ? "bg-casta/8" : ""
                 }`}
               >
-                <div className="flex items-center gap-3">
+                {/*
+                  En el teléfono el nombre va en su propio renglón y los
+                  controles debajo. Compartiendo renglón, los −/+, la cantidad
+                  y la unidad ocupan ~185 px fijos y al nombre le quedaban unos
+                  130: con la chapita "bajo" al lado, 75. Lo peor es que eso
+                  pasa justo el primer día, con todo en cero y por lo tanto
+                  TODOS los items en bajo stock — el momento en que hay que
+                  leer los nombres para cargar el inventario.
+                */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <input
@@ -139,7 +148,7 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
                             guardarCampo(item.id, { nombre: v });
                         }}
                         aria-label={`Nombre de ${item.nombre}`}
-                        className="min-w-0 flex-1 truncate rounded bg-transparent text-sm font-medium outline-none focus:bg-white/5 focus:px-1"
+                        className="min-w-0 flex-1 rounded bg-transparent text-sm font-medium outline-none focus:bg-white/5 focus:px-1"
                       />
                       {bajo && (
                         <span className="shrink-0 rounded-full bg-casta px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
