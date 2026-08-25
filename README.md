@@ -44,6 +44,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0014_fotos_promos.sql` | Las tres promos con su foto, en recorte ancho |
 | `0015_admins_de_verdad.sql` | Lista de admins: el RLS pregunta *quién* entra, no solo si entró |
 | `0016_cocina_no_es_dueno.sql` | Dos roles: la cocina ve pedidos, el dueño ve todo |
+| `0017_actividad_y_encargado.sql` | Registro de quién cambió qué, y el rol `encargado` |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -72,6 +73,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Compras reales: registrar y borrar contra la base
 - [x] Números reales: ventas (= todo pedido no cancelado), compras y ganancia por día
 - [x] El dueño puede anular una venta del día y devolverla si se equivocó
+- [x] Registro de actividad: quién cambió el inventario o un precio, y cuándo
 - [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
       cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
 - [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
@@ -281,14 +283,17 @@ pongas, que se la decís de palabra.
 
 ### Dos roles
 
-| | `cocina` | `dueno` |
-|---|---|---|
-| Ver pedidos y cambiarles el estado | sí | sí |
-| Ventas del día, ganancia, compras | no | sí |
-| Inventario | no | sí |
-| Cambiar precios del menú | no | sí |
-| Datos de contacto de los clientes | solo del pedido que despacha | sí |
-| Repartir accesos y contraseñas | no | sí |
+| | `cocina` | `encargado` | `dueno` |
+|---|---|---|---|
+| Ver pedidos y cambiarles el estado | sí | sí | sí |
+| Inventario | no | sí | sí |
+| Compras | no | sí | sí |
+| Cambiar precios del menú | no | sí | sí |
+| Ventas del día y ganancia | no | no | sí |
+| Anular una venta | no | no | sí |
+| Ver el registro de actividad | no | no | sí |
+| Datos de contacto de los clientes | solo del pedido que despacha | sí | sí |
+| Repartir accesos y contraseñas | no | no | sí |
 
 El cocinero necesita leer pedidos y moverlos de estado. Nada más. Darle el
 resto sería darle las ventas del día y el poder de cambiar precios — y, antes
@@ -322,6 +327,62 @@ secreta y se salta el RLS, así que desde ahí siempre se puede reabrir:
 
 ```sql
 insert into admins (email) values ('elcorreo@ejemplo.com') on conflict (email) do nothing;
+```
+
+## Quién cambió qué
+
+El dueño le da el panel a un empleado, y quiere poder mirar después quién bajó
+el stock de la carne o quién movió un precio. Eso es
+[`/admin/actividad`](https://casta-burger.vercel.app/admin/actividad), visible
+solo para `dueno`.
+
+Cada cambio en `inventory` y en `menu_items` deja una fila con quién, cuándo,
+sobre qué, y el antes → después de cada campo que se movió.
+
+Tres decisiones, y la primera es la que hace que esto sirva de algo:
+
+- **Lo escribe la base, no la app.** Un trigger en cada tabla
+  ([`0017`](supabase/migrations/0017_actividad_y_encargado.sql)), no las
+  acciones del servidor. Un admin tiene un token válido y puede escribir en
+  `inventory` pegándole directo a la API de Supabase sin abrir el panel: un
+  registro escrito por la app se perdería justo el caso que preocupa. Con el
+  trigger, la fila queda entre por donde entre — panel, API o SQL Editor (que
+  se registra como `llave secreta (SQL Editor)`, porque ahí no hay sesión).
+- **El nombre va copiado, no referenciado.** `actor_email` se congela al
+  escribir la fila. El día que saques al empleado de `admins`, el registro
+  tiene que seguir diciendo quién fue; uno que se queda mudo cuando echás a
+  alguien no sirve para nada. El `uuid` de auth se guarda también, porque
+  sobrevive a un cambio de correo.
+- **Solo se agrega.** `actividad` tiene una única política, de select, para
+  `es_dueno()`. Sin política de insert, update ni delete, el RLS las niega a
+  todo el mundo — al encargado, y al dueño también. Las filas entran solo por
+  el trigger, que corre como dueña de la tabla. Si alguien pudiera borrar
+  filas de acá, el registro no probaría nada.
+
+Un update que no movió ningún campo visible no genera fila, y `updated_at` no
+cuenta como campo: si no, el registro se llenaría de líneas que no dicen nada.
+
+### Un registro no es un permiso
+
+Con el registro solo, el empleado sigue pudiendo entrar a Equipo y cambiarle la
+contraseña al dueño — el registro te lo contaría después, cuando ya no podés
+entrar. Por eso además existe el rol **`encargado`**: maneja el día a día
+—pedidos, menú, inventario, compras— y no toca dos cosas.
+
+**Equipo**, porque un empleado que puede quitarle el acceso al patrón no es un
+empleado con permisos: es el patrón. Y **anular ventas**, porque es reescribir
+lo ya registrado, justo lo que el registro viene a evitar.
+
+Qué ve cada rol sale de [`secciones.ts`](src/lib/admin/secciones.ts), una sola
+lista que usan la barra de pestañas y el proxy — si vivieran en dos lados,
+tarde o temprano el menú escondería una sección que la URL igual abre. Y está
+cerrada por omisión: una ruta de `/admin` que no esté anotada ahí solo la abre
+el dueño, así el olvido peca de dejar afuera y no de dejar entrar.
+
+Para sumar al empleado, desde Equipo, o a mano:
+
+```sql
+update admins set rol = 'encargado' where email = 'elcorreo@ejemplo.com';
 ```
 
 ## El horario

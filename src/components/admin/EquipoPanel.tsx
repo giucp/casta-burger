@@ -12,11 +12,21 @@ import {
 
 const CLAVE_MINIMA = 8;
 
+/**
+ * De menos a más poder, y en ese orden a propósito: el ojo elige lo primero
+ * que le sirve, así que lo primero tiene que ser lo más inofensivo.
+ */
 const ROLES: { valor: Rol; titulo: string; explica: string }[] = [
   {
     valor: "cocina",
     titulo: "Cocina",
     explica: "Ve los pedidos y les cambia el estado. Nada más.",
+  },
+  {
+    valor: "encargado",
+    titulo: "Encargado",
+    explica:
+      "El día a día: pedidos, menú, inventario y compras. No reparte accesos ni anula ventas.",
   },
   {
     valor: "dueno",
@@ -25,6 +35,13 @@ const ROLES: { valor: Rol; titulo: string; explica: string }[] = [
       "Todo: las ventas del día, las compras, los precios y quién entra acá.",
   },
 ];
+
+/** Lo que se lee al lado de cada persona en la lista. */
+const RESUMEN: Record<Rol, string> = {
+  dueno: "Dueño · todo",
+  encargado: "Encargado · sin Equipo ni anular ventas",
+  cocina: "Cocina · solo pedidos",
+};
 
 function Campo({
   id,
@@ -276,7 +293,7 @@ export function EquipoPanel({
                       )}
                     </p>
                     <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-casta">
-                      {a.rol === "dueno" ? "Dueño · todo" : "Cocina · solo pedidos"}
+                      {RESUMEN[a.rol] ?? a.rol}
                     </p>
                     {a.agregadoPor && !soyYo && (
                       <p className="font-mono text-[10px] uppercase tracking-[0.06em] text-smoke/80">

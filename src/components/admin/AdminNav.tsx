@@ -2,24 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { seccionesDe, type Rol } from "@/lib/admin/secciones";
 
 /**
- * `soloDueno` marca lo que la cocina no necesita para despachar: la plata del
- * día, los precios y el reparto de accesos. No es la seguridad —de eso se
- * ocupan el middleware y el RLS— es no ofrecerle puertas que no abren.
+ * La barra de pestañas. Qué ve cada rol sale de `secciones.ts`, la misma
+ * lista que usa el proxy: si vivieran en dos lados terminarían diciendo cosas
+ * distintas.
+ *
+ * No es la seguridad —de eso se ocupan el proxy y el RLS— es no ofrecerle a
+ * nadie puertas que no abren.
  */
-const SECCIONES = [
-  { href: "/admin", label: "Panel", soloDueno: true },
-  { href: "/admin/cocina", label: "Cocina", soloDueno: false },
-  { href: "/admin/menu", label: "Menú", soloDueno: true },
-  { href: "/admin/inventario", label: "Inventario", soloDueno: true },
-  { href: "/admin/compras", label: "Compras", soloDueno: true },
-  { href: "/admin/equipo", label: "Equipo", soloDueno: true },
-];
-
-export function AdminNav({ rol }: { rol: string }) {
+export function AdminNav({ rol }: { rol: Rol }) {
   const ruta = usePathname();
-  const visibles = SECCIONES.filter((s) => !s.soloDueno || rol === "dueno");
+  const visibles = seccionesDe(rol);
 
   // Con una sola sección, la barra de pestañas es ruido.
   if (visibles.length < 2) return null;

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { LogoMarca } from "@/components/LogoMarca";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BotonSalir } from "@/components/admin/BotonSalir";
+import { esRol } from "@/lib/admin/secciones";
 import { APP_ADMIN, metadataApple } from "@/lib/manifiestos";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,7 +41,7 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser();
 
   const { data: rol } = await supabase.rpc("mi_rol");
-  if (!user || typeof rol !== "string") redirect("/admin/login?error=sin-permiso");
+  if (!user || !esRol(rol)) redirect("/admin/login?error=sin-permiso");
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-ink">

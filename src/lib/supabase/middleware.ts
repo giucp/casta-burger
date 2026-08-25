@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { destinoDe, esRol, puedeVer } from "@/lib/admin/secciones";
 
 /**
  * Rutas de /admin que se pueden ver sin sesión.
@@ -9,8 +10,6 @@ import { NextResponse, type NextRequest } from "next/server";
  */
 const PUBLICAS = ["/admin/login"];
 
-/** Lo único que ve el rol cocina, y donde aterriza todo el mundo al entrar. */
-const COCINA = "/admin/cocina";
 
 /**
  * Refresca la sesión en cada request y protege /admin (§6 del brief).
@@ -79,22 +78,23 @@ export async function updateSession(request: NextRequest) {
     const { data } = await supabase.rpc("mi_rol");
     rol = typeof data === "string" ? data : null;
   }
-  const autorizado = rol !== null;
+  const autorizado = esRol(rol);
 
   const esPublica = PUBLICAS.some((p) => ruta.startsWith(p));
 
   /**
-   * El cocinero entra a cocinar, no a la caja. Con rol 'cocina' solo existe la
-   * pantalla de pedidos: el resto del panel son las ventas del día, la
-   * ganancia neta, las compras y los precios, y nada de eso hace falta para
-   * despachar.
+   * Cada rol entra a lo suyo. El cocinero a cocinar; el encargado al día a
+   * día, pero no a Equipo ni al registro de actividad; el dueño a todo.
    *
-   * Por debajo el RLS dice exactamente lo mismo, así que esto no es la
-   * seguridad: es no mostrarle pantallas que le volverían vacías.
+   * Qué ve quién sale de `secciones.ts`, la misma lista que dibuja la barra de
+   * pestañas — así el menú y la URL no pueden decir cosas distintas.
+   *
+   * Por debajo el RLS dice lo mismo, así que esto no es la seguridad: es no
+   * mandar a nadie a una pantalla que le volvería vacía.
    */
-  if (rol === "cocina" && !esPublica && ruta !== COCINA) {
+  if (esRol(rol) && !esPublica && !puedeVer(rol, ruta)) {
     const destino = request.nextUrl.clone();
-    destino.pathname = COCINA;
+    destino.pathname = destinoDe(rol);
     destino.search = "";
     return NextResponse.redirect(destino);
   }
@@ -118,9 +118,9 @@ export async function updateSession(request: NextRequest) {
    * mandar de vuelta al panel a alguien con sesión pero sin permiso lo haría
    * rebotar entre el panel y el login para siempre, sin poder ni salir.
    */
-  if (ruta === "/admin/login" && autorizado) {
+  if (ruta === "/admin/login" && esRol(rol)) {
     const destino = request.nextUrl.clone();
-    destino.pathname = COCINA;
+    destino.pathname = destinoDe(rol);
     destino.search = "";
     return NextResponse.redirect(destino);
   }

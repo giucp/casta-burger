@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-/** 'dueno' ve y toca todo. 'cocina' solo ve pedidos y les cambia el estado. */
-export type Rol = "dueno" | "cocina";
+/** Los tres roles y qué ve cada uno viven en `@/lib/admin/secciones`. */
+export type { Rol } from "@/lib/admin/secciones";
+import type { Rol } from "@/lib/admin/secciones";
 
 export type Admin = {
   email: string;
