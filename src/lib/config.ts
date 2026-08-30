@@ -48,8 +48,12 @@ export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
  * Se puso en `false` el 14 de agosto de 2026, al empezar a operar de verdad.
  * Solo tiene sentido volver a `true` para mostrar el flujo completo un martes a
  * las 3 PM, y hay que acordarse de devolverlo.
+ *
+ * TEMPORAL: en `true` desde el 30 de agosto de 2026 para probar en el teléfono
+ * que "Confirmar pedido" abra WhatsApp de un solo toque. Devolver a `false` al
+ * terminar — mientras esté así, cualquiera puede pedir a cualquier hora.
  */
-export const MODO_DEMO = false;
+export const MODO_DEMO = true;
 
 /**
  * Horario de atención: jueves a domingo, 6:00–11:00 PM (hora de Caracas).
