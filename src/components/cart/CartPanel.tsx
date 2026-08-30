@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { describirOpciones, subtotalLinea } from "@/lib/cart";
 import { usd } from "@/lib/format";
+import { BUSINESS } from "@/lib/config";
 import { linkWhatsApp, mensajePedido, type TipoPedido } from "@/lib/whatsapp";
 import { crearPedido } from "@/lib/acciones/crear-pedido";
 import { guardarSuscripcion } from "@/lib/acciones/suscribir";
@@ -97,6 +98,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
   const [intentado, setIntentado] = useState(false);
   /** Queda listo cuando el pedido ya está guardado en la base */
   const [confirmado, setConfirmado] = useState<{
+    /** Si el navegador dejó abrir WhatsApp solo. Cambia lo que dice la pantalla. */
+    abrio: boolean;
     id: string;
     numero: number;
     tipo: TipoPedido;
@@ -137,6 +140,31 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     // reloj cruzó la hora de cierre con el panel abierto.
     if (!estado.puedePedir) return;
 
+    /**
+     * La pestaña se abre ACÁ, todavía dentro del toque, y recién después se le
+     * pone la dirección. Es lo único que hace que un solo botón pueda guardar
+     * el pedido Y abrir WhatsApp.
+     *
+     * Abrirla después del `await` no funciona: para el navegador eso ya no es
+     * un gesto del visitante sino algo que la página decidió sola, y lo trata
+     * como una ventana emergente. Por eso antes hacían falta dos toques.
+     *
+     * Si aun así devuelve null —hay navegadores que bloquean todo—, el pedido
+     * se guarda igual y la pantalla de confirmación ofrece el botón. Nunca se
+     * pierde un pedido por esto.
+     */
+    const ventana = window.open("", "_blank");
+    if (ventana) {
+      // Una pestaña en blanco por un segundo parece que algo se rompió.
+      ventana.document.write(
+        `<!doctype html><meta charset="utf-8"><title>${BUSINESS.nombre}</title>` +
+          `<body style="margin:0;background:#0C0C0C;color:#D6CFC7;` +
+          `font:16px/1.5 system-ui,sans-serif;display:grid;place-items:center;height:100vh">` +
+          `<p>Abriendo WhatsApp…</p>`,
+      );
+      ventana.document.close();
+    }
+
     const ubicacionUrl = ubicacion
       ? `https://maps.google.com/?q=${ubicacion.lat.toFixed(6)},${ubicacion.lng.toFixed(6)}`
       : undefined;
@@ -167,6 +195,8 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
     setGuardando(false);
 
     if (!resultado.ok) {
+      // No dejarle una pestaña huérfana abierta a alguien cuyo pedido no salió.
+      ventana?.close();
       setFallo(resultado.error);
       return;
     }
@@ -193,12 +223,17 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
       resultado.numero,
     );
 
+    const enlace = linkWhatsApp(mensaje);
+    const abrio = !!ventana && !ventana.closed;
+    if (abrio) ventana.location.href = enlace;
+
     setConfirmado({
       id: resultado.id,
       numero: resultado.numero,
       tipo,
       total: resultado.total,
-      enlace: linkWhatsApp(mensaje),
+      enlace,
+      abrio,
     });
     vaciar();
   };
@@ -235,19 +270,30 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
           </p>
 
           <p className="mb-5 text-sm text-bone-soft">
-            Ya lo recibimos en la cocina. Falta cerrar el pago por WhatsApp.
+            {confirmado.abrio
+              ? "Ya lo recibimos en la cocina y te abrimos WhatsApp para cerrar el pago."
+              : "Ya lo recibimos en la cocina. Falta cerrar el pago por WhatsApp."}
           </p>
 
-          {/* El enlace se abre con un toque aparte a propósito: si se abriera
-              solo al terminar de guardar, el navegador lo bloquearía por venir
-              de una espera y no de un gesto del visitante. */}
+          {/*
+            Con un solo toque WhatsApp ya se abrió en otra pestaña. El botón
+            queda igual, y no es de adorno: es la salida cuando el navegador
+            bloqueó la pestaña, cuando el visitante la cerró sin querer, o
+            cuando volvió acá a activar los avisos y perdió la otra de vista.
+            Por eso cambia lo que dice, no si está.
+          */}
           <a
             href={confirmado.enlace}
             target="_blank"
             rel="noreferrer"
-            className="flex w-full items-center justify-center rounded-full bg-casta px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] text-white transition-colors hover:bg-casta-deep"
+            className={[
+              "flex w-full items-center justify-center rounded-full px-6 py-3.5 font-display text-lg uppercase tracking-[0.03em] transition-colors",
+              confirmado.abrio
+                ? "border border-bone-line text-bone-ink hover:border-bone-ink"
+                : "bg-casta text-white hover:bg-casta-deep",
+            ].join(" ")}
           >
-            Abrir WhatsApp
+            {confirmado.abrio ? "Volver a abrir WhatsApp" : "Abrir WhatsApp"}
           </a>
 
           {/* Avisos push: solo se ofrece si el navegador los soporta */}

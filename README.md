@@ -65,7 +65,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Estado abierto/cerrado real, calculado contra `America/Caracas`
 - [x] Menú real en la base, con precios y promos
 - [x] Carrito + selector de proteína y extras
-- [x] Flujo de pedido: carrito → retiro/delivery → datos → WhatsApp
+- [x] Flujo de pedido: carrito → retiro/delivery → datos → un toque que guarda y abre WhatsApp
 - [x] Guardar el pedido, con N° y total calculados en el servidor
 - [x] Auth con contraseña, `/admin` protegido por el proxy y por RLS
 - [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
