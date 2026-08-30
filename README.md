@@ -45,6 +45,7 @@ y se corren pegándolas en el SQL Editor, en orden:
 | `0015_admins_de_verdad.sql` | Lista de admins: el RLS pregunta *quién* entra, no solo si entró |
 | `0016_cocina_no_es_dueno.sql` | Dos roles: la cocina ve pedidos, el dueño ve todo |
 | `0017_actividad_y_encargado.sql` | Registro de quién cambió qué, y el rol `encargado` |
+| `0018_recetas_y_consumo.sql` | Recetas por producto y descuento del inventario al entregar |
 
 Todas son seguras de correr de nuevo: las que cargan productos usan
 `on conflict (slug) do update`, así que recargarlas actualiza en vez de
@@ -74,6 +75,7 @@ variables de entorno de [`.env.example`](.env.example).
 - [x] Números reales: ventas (= todo pedido no cancelado), compras y ganancia por día
 - [x] El dueño puede anular una venta del día y devolverla si se equivocó
 - [x] Registro de actividad: quién cambió el inventario o un precio, y cuándo
+- [x] Recetas por producto: al entregar un pedido, el inventario se descuenta solo
 - [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
       cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
 - [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
@@ -328,6 +330,46 @@ secreta y se salta el RLS, así que desde ahí siempre se puede reabrir:
 ```sql
 insert into admins (email) values ('elcorreo@ejemplo.com') on conflict (email) do nothing;
 ```
+
+## Las recetas y el descuento automático
+
+Cada producto puede declarar qué consume por unidad, en
+[`/admin/recetas`](https://casta-burger.vercel.app/admin/recetas). Al marcar un
+pedido como **entregado**, el inventario baja solo; si se anula la venta, se
+devuelve.
+
+Cuatro cosas que no son obvias:
+
+- **La proteína necesita su propia columna.** No es un producto del menú sino
+  un texto que elige el cliente (Carne, Cordero, Pollo), así que una receta
+  por producto descontaría carne aunque hubiera pedido pollo. Una línea con
+  `proteina` en null aplica siempre —el pan, el queso— y con una proteína
+  puesta, solo cuando se eligió esa. **Los extras no necesitan nada**: en la
+  base son productos del menú con su id, así que "tocineta adicional" lleva su
+  receta como cualquier otro.
+- **Un pedido descuenta una sola vez.** La tabla `consumos` tiene `order_id`
+  como clave primaria. Sin eso, cualquier cosa que dispare el cambio de estado
+  dos veces —un reintento, dos pantallas de cocina, un clic doble— descontaría
+  el doble y nadie se enteraría hasta el conteo físico. Es más importante que
+  la resta en sí.
+- **Al revertir se devuelve lo que se sacó, no lo que la receta dice hoy.**
+  `consumos.detalle` guarda el detalle exacto. Si la receta cambió entre la
+  venta y la anulación, recalcular dejaría el stock peor que antes.
+- **El stock puede quedar negativo, y está bien.** La hamburguesa se hizo
+  igual: si el número dijera cero cuando en realidad se deben 3 kg, el
+  inventario mentiría justo cuando más importa. La pantalla lo marca "falta
+  contar". Nunca frena una venta.
+
+El descuento es un trigger y no una acción del servidor por lo mismo que el
+registro de actividad, más una razón extra: así es **atómico** con el cambio de
+estado. O pasan las dos cosas o no pasa ninguna.
+
+Ojo con las promos: en la base son un producto más, así que su receta hay que
+cargarla completa. La de "3 Cheese Burger" lleva tres veces todo.
+
+Y el descuento automático **no** aparece en Actividad: una noche de 50 pedidos
+metería cientos de filas y taparía lo único que esa pantalla existe para
+mostrar. Queda registrado en el pedido y en `consumos`.
 
 ## Quién cambió qué
 

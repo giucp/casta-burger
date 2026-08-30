@@ -152,7 +152,10 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
                       />
                       {bajo && (
                         <span className="shrink-0 rounded-full bg-casta px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-white">
-                          bajo
+                          {/* Un negativo no es "poco": es que se vendió más de
+                              lo que había cargado y falta contar. Decirle
+                              "bajo" lo escondería entre los demás. */}
+                          {item.cantidad < 0 ? "falta contar" : "bajo"}
                         </span>
                       )}
                     </div>

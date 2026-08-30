@@ -24,6 +24,7 @@ const OP_INFO: Record<
 const TABLAS: Record<string, string> = {
   inventory: "Inventario",
   menu_items: "Menú",
+  recetas: "Recetas",
 };
 
 function dia(iso: string): string {
@@ -77,8 +78,9 @@ export function ActividadPanel({ inicial }: { inicial: Movimiento[] }) {
   return (
     <>
       <p className="mb-4 max-w-prose text-[13px] text-smoke">
-        Cada cambio en el inventario y en el menú queda anotado acá, entre por
-        el panel o por donde sea. No se puede editar ni borrar, tampoco por vos.
+        Cada cambio en el inventario, el menú y las recetas queda anotado acá,
+        entre por el panel o por donde sea. No se puede editar ni borrar,
+        tampoco por vos.
       </p>
 
       {personas.length > 1 || tablas.length > 1 ? (

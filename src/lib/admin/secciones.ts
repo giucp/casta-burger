@@ -42,6 +42,7 @@ export const SECCIONES: Seccion[] = [
   { href: "/admin/cocina", label: "Cocina", roles: TODOS },
   { href: "/admin/menu", label: "Menú", roles: GESTION },
   { href: "/admin/inventario", label: "Inventario", roles: GESTION },
+  { href: "/admin/recetas", label: "Recetas", roles: GESTION },
   { href: "/admin/compras", label: "Compras", roles: GESTION },
   { href: "/admin/actividad", label: "Actividad", roles: SOLO_DUENO },
   { href: "/admin/equipo", label: "Equipo", roles: SOLO_DUENO },
