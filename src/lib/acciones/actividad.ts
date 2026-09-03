@@ -62,6 +62,18 @@ function valor(v: unknown): string | null {
   return String(v);
 }
 
+/**
+ * Las columnas que guardan un id y no un nombre, y de qué tabla sale ese nombre.
+ *
+ * `recetas` es la única que las tiene, y sin esto la pantalla mostraba
+ * "ingrediente 0280dd33-96db-4f71-b1bc-60b97784585c". El dueño viene acá a
+ * saber qué cambió: un UUID no se lo dice.
+ */
+const CAMPO_ES_ID: Record<string, "inventory" | "menu_items"> = {
+  inventory_id: "inventory",
+  menu_item_id: "menu_items",
+};
+
 type Fila = {
   id: number;
   ocurrio_en: string;
@@ -86,21 +98,100 @@ export async function listarActividad(limite = 200): Promise<Movimiento[]> {
     return [];
   }
 
-  return (data as Fila[]).map((f) => ({
+  const filas = data as Fila[];
+  const nombres = await nombresDeLosIds(supabase, filas);
+
+  /**
+   * El id se resuelve al leer, no al escribir: la fila de `actividad` queda
+   * cruda y sin tocar —es lo que la hace un registro— y el nombre lo pone la
+   * pantalla. Si el ingrediente ya no existe queda un pedazo del id, que es
+   * poco, pero es más que nada.
+   */
+  const legible = (campo: string, v: unknown): string | null => {
+    const tabla = CAMPO_ES_ID[campo];
+    if (tabla && typeof v === "string") {
+      return nombres[tabla].get(v) ?? `${v.slice(0, 8)}…`;
+    }
+    // En una receta, proteína vacía no es "sin dato": es "aplica siempre".
+    if (campo === "proteina" && (v === null || v === undefined)) return "siempre";
+    return valor(v);
+  };
+
+  return filas.map((f) => ({
     id: f.id,
     cuandoISO: f.ocurrio_en,
     quien: f.actor_email,
     tabla: f.tabla,
+    etiqueta: f.etiqueta ?? etiquetaDeReceta(f, nombres.menu_items),
     operacion: f.operacion,
-    etiqueta: f.etiqueta,
     cambios: Object.entries(f.cambios ?? {})
+      // El producto pasa a ser el título de la fila: repetirlo abajo es ruido.
+      .filter(([campo]) => !(f.tabla === "recetas" && campo === "menu_item_id"))
       .map(([campo, v]) => ({
         campo: CAMPO_ETIQUETA[campo] ?? campo,
-        antes: valor(v?.antes),
-        despues: valor(v?.despues),
+        antes: legible(campo, v?.antes),
+        despues: legible(campo, v?.despues),
       }))
       // Alfabético y no el orden del jsonb: así el mismo cambio se lee igual
       // dos veces seguidas.
       .sort((a, b) => a.campo.localeCompare(b.campo)),
   }));
+}
+
+/**
+ * `recetas` no tiene columna `nombre`, así que el trigger deja la etiqueta en
+ * null y la fila salía titulada "—". El nombre que le sirve al dueño es el del
+ * producto: "Cheese Burger", no el id de la línea de receta.
+ */
+function etiquetaDeReceta(f: Fila, menu: Map<string, string>): string | null {
+  if (f.tabla !== "recetas") return null;
+  const c = f.cambios?.menu_item_id;
+  const id = c?.despues ?? c?.antes;
+  return typeof id === "string" ? (menu.get(id) ?? null) : null;
+}
+
+/**
+ * Los nombres de todo lo que las filas nombran por id, en dos consultas y no
+ * una por fila. Va después de leer `actividad` a propósito: solo se piden los
+ * ids que de verdad aparecieron, que en la mayoría de las cargas son ninguno.
+ */
+async function nombresDeLosIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  filas: Fila[],
+): Promise<Record<"inventory" | "menu_items", Map<string, string>>> {
+  const ids: Record<string, Set<string>> = {
+    inventory: new Set(),
+    menu_items: new Set(),
+  };
+
+  for (const f of filas) {
+    for (const [campo, v] of Object.entries(f.cambios ?? {})) {
+      const tabla = CAMPO_ES_ID[campo];
+      if (!tabla) continue;
+      for (const x of [v?.antes, v?.despues]) {
+        if (typeof x === "string") ids[tabla].add(x);
+      }
+    }
+  }
+
+  const buscar = async (tabla: "inventory" | "menu_items") => {
+    const lista = [...ids[tabla]];
+    if (lista.length === 0) return new Map<string, string>();
+    const { data } = await supabase
+      .from(tabla)
+      .select("id, nombre")
+      .in("id", lista);
+    return new Map(
+      ((data ?? []) as { id: string; nombre: string }[]).map((r) => [
+        r.id,
+        r.nombre,
+      ]),
+    );
+  };
+
+  const [inventory, menu_items] = await Promise.all([
+    buscar("inventory"),
+    buscar("menu_items"),
+  ]);
+  return { inventory, menu_items };
 }
