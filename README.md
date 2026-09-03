@@ -451,15 +451,12 @@ apaga las tres a la vez, para poder mostrar el flujo completo un martes a las
 
 La web ya está publicada. Falta lo de arriba sin marcar, y además:
 
-**1. Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
+**Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
 proyecto de Supabase, Vercel y dominio. Incluye cambiar `VAPID_SUBJECT` en las
 variables de Vercel al correo del negocio (hoy tiene el del desarrollador; es
 solo el contacto técnico que exige el estándar de push, no lo ve el cliente).
 Si además se estrena dominio propio, hay que agregar `NEXT_PUBLIC_SITE_URL` con
 la dirección nueva, o la imagen de compartir sigue apuntando a `.vercel.app`.
-
-**2. Configurar el aviso a la cocina por Telegram** (pendiente): crear el bot
-con @BotFather y cargar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en Vercel.
 
 ## Decisiones tomadas
 
