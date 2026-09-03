@@ -13,8 +13,9 @@ export default async function InventarioPage() {
         Inventario
       </h1>
       <p className="mb-5 max-w-prose text-sm text-smoke">
-        Se ajusta a mano, como el cuaderno. No se descuenta solo con cada
-        pedido.
+        Se ajusta a mano, como el cuaderno. Los productos que tienen receta
+        además se descuentan solos al entregar el pedido, y se devuelven si se
+        anula la venta.
       </p>
 
       <InventarioTabla inicial={await listarInventario()} />
