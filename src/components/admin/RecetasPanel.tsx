@@ -61,7 +61,10 @@ export function RecetasPanel({
     <>
       <p className="mb-2 max-w-prose text-[13px] text-smoke">
         Al marcar un pedido como <b className="text-ash">entregado</b>, esto se
-        descuenta solo del inventario. Si se anula la venta, se devuelve.
+        descuenta solo del inventario. Si se anula la venta, se devuelve. Acá
+        van las hamburguesas y las papas, que es lo que se arma en la cocina:
+        las promos descuentan solas, con la receta de la hamburguesa que
+        llevan.
       </p>
       <p className="mb-4 font-mono text-[11px] uppercase tracking-[0.1em] text-smoke">
         {conReceta} de {recetas.length} productos con receta

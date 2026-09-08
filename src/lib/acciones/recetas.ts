@@ -51,6 +51,18 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
       supabase
         .from("menu_items")
         .select("id, nombre, categoria, orden")
+        // Solo lo que se arma en la cocina con ingredientes: las hamburguesas
+        // y las papas. Nada más tiene una receta que el dueño pueda escribir.
+        //
+        // Las bebidas se compran hechas —nadie fabrica una Coca-Cola—. Los
+        // extras son un ingrediente suelto, no una preparación. Y las promos
+        // son las mismas hamburguesas vendidas de un golpe: su receta sería
+        // una copia de la que ya está cargada, y el día que cambie una, las
+        // copias quedan viejas en silencio.
+        //
+        // Que todo eso salga del inventario al venderse es un problema real,
+        // pero no se resuelve pidiéndole recetas al dueño.
+        .in("categoria", ["Burgers", "Fries"])
         .order("categoria")
         .order("orden"),
       supabase
