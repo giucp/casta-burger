@@ -190,15 +190,24 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
                       +
                     </button>
 
+                    {/*
+                      La unidad siempre se pudo cambiar, pero sin recuadro se
+                      leía como una etiqueta y nadie la tocaba: el queso quedó
+                      en kg cuando se cuenta por unidad. Ahora tiene el mismo
+                      marco que la cantidad, que es lo que dice "esto se edita".
+                    */}
                     <input
                       defaultValue={item.unidad}
                       onBlur={(e) => {
                         const v = e.target.value.trim();
-                        if (v && v !== item.unidad)
+                        if (v && v !== item.unidad) {
+                          parchar(item.id, { unidad: v });
                           guardarCampo(item.id, { unidad: v });
+                        }
                       }}
                       aria-label={`Unidad de ${item.nombre}`}
-                      className="w-12 rounded bg-transparent px-1 py-1 font-mono text-[11px] text-smoke outline-none focus:bg-white/5"
+                      title="Unidad: kg, und, L…"
+                      className="w-12 rounded-lg border border-white/15 bg-ink px-1.5 py-1.5 text-center font-mono text-[11px] text-smoke outline-none focus:border-white/50 focus:text-white"
                     />
                   </div>
                 </div>
