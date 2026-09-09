@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { esUnidad, normalizar, type Unidad } from "@/lib/unidades";
 
 /**
  * CRUD del inventario, contra la tabla `inventory` de Supabase.
@@ -14,7 +15,7 @@ export type ItemInventario = {
   id: string;
   nombre: string;
   cantidad: number;
-  unidad: string;
+  unidad: Unidad;
   umbralAlerta: number;
 };
 
@@ -33,7 +34,9 @@ function aItem(f: FilaInventario): ItemInventario {
     id: f.id,
     nombre: f.nombre,
     cantidad: num(f.cantidad),
-    unidad: f.unidad,
+    // Se normaliza al leer, no solo en la migración: un item que quedó con
+    // "gr" tiene que poder mostrarse y editarse sin romper la pantalla.
+    unidad: normalizar(f.unidad),
     umbralAlerta: num(f.umbral_alerta),
   };
 }
@@ -64,7 +67,7 @@ export type Resultado<T = undefined> =
 export async function crearItemInventario(datos: {
   nombre: string;
   cantidad: number;
-  unidad: string;
+  unidad: Unidad;
   umbralAlerta: number;
 }): Promise<Resultado<ItemInventario>> {
   const nombre = datos.nombre.trim();
@@ -80,7 +83,7 @@ export async function crearItemInventario(datos: {
     .insert({
       nombre: nombre.slice(0, 80),
       cantidad: datos.cantidad,
-      unidad: datos.unidad.trim().slice(0, 16) || "und",
+      unidad: normalizar(datos.unidad),
       umbral_alerta: datos.umbralAlerta,
     })
     .select("id, nombre, cantidad, unidad, umbral_alerta")
@@ -93,13 +96,17 @@ export async function crearItemInventario(datos: {
   return { ok: true, dato: aItem(data as FilaInventario) };
 }
 
-/** Actualiza los campos que vengan. La cantidad y el umbral no bajan de 0. */
+/**
+ * Actualiza los campos que vengan. La cantidad y el umbral no bajan de 0.
+ *
+ * La unidad NO se toca por acá: va por `cambiarUnidadItem`, porque cambiarla
+ * tiene que convertir los números y no solo reetiquetarlos.
+ */
 export async function actualizarItemInventario(
   id: string,
   patch: Partial<{
     nombre: string;
     cantidad: number;
-    unidad: string;
     umbralAlerta: number;
   }>,
 ): Promise<Resultado> {
@@ -115,9 +122,6 @@ export async function actualizarItemInventario(
       return { ok: false, error: "La cantidad no es válida." };
     fila.cantidad = patch.cantidad;
   }
-  if (patch.unidad !== undefined) {
-    fila.unidad = patch.unidad.trim().slice(0, 16) || "und";
-  }
   if (patch.umbralAlerta !== undefined) {
     if (!Number.isFinite(patch.umbralAlerta) || patch.umbralAlerta < 0)
       return { ok: false, error: "El umbral no es válido." };
@@ -130,6 +134,34 @@ export async function actualizarItemInventario(
   if (error) {
     console.error("No se pudo actualizar el item:", error.message);
     return { ok: false, error: "No se pudo guardar el cambio." };
+  }
+  return { ok: true };
+}
+
+/**
+ * Cambiar la unidad no es cambiarle el nombre al número.
+ *
+ * Va por una función de la base y no por un update común porque tiene que
+ * mover tres cosas a la vez —la cantidad, el umbral y todas las recetas que
+ * usan el ingrediente— y si se hiciera desde acá en tres pasos, una falla en
+ * el medio dejaría el inventario en kilos con las recetas en gramos. Eso no
+ * se ve: se descubre contando.
+ */
+export async function cambiarUnidadItem(
+  id: string,
+  unidad: Unidad,
+): Promise<Resultado> {
+  if (!esUnidad(unidad)) return { ok: false, error: "Unidad no válida." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cambiar_unidad_inventario", {
+    p_item: id,
+    p_nueva: unidad,
+  });
+
+  if (error) {
+    console.error("No se pudo cambiar la unidad:", error.message);
+    return { ok: false, error: "No se pudo cambiar la unidad." };
   }
   return { ok: true };
 }

@@ -8,6 +8,7 @@ import {
   guardarLinea,
   type RecetaProducto,
 } from "@/lib/acciones/recetas";
+import { compatibles, convertir, type Unidad } from "@/lib/unidades";
 
 /**
  * Cuánto lleva cada producto.
@@ -121,11 +122,35 @@ function Producto({
   const [proteina, setProteina] = useState<string>("");
   const [ocupado, setOcupado] = useState(false);
 
+  /**
+   * En qué unidad se está escribiendo, que no tiene por qué ser la del
+   * inventario. Una hamburguesa lleva 120 g y la carne se compra en kilos:
+   * obligar a escribir 0.12 es pedirle a alguien que haga la cuenta de cabeza
+   * cinco veces seguidas, y ahí es donde se pierde un decimal. Un decimal
+   * perdido son diez veces la carne, y no avisa.
+   *
+   * `null` = la del ingrediente. Se vuelve a null al cambiar de ingrediente,
+   * porque "g" no significa nada si pasaste de la carne a los panes.
+   */
+  const [unidadEntrada, setUnidadEntrada] = useState<Unidad | null>(null);
+
+  const item = porNombre.get(ingrediente);
+  const unidadItem: Unidad = item?.unidad ?? "und";
+  const unidadUsada: Unidad = unidadEntrada ?? unidadItem;
+  const opcionesUnidad = compatibles(unidadItem);
+
   const agregar = async () => {
     onError(null);
-    const n = Number(cantidad.replace(",", "."));
-    if (!Number.isFinite(n) || n <= 0) {
+    const escrito = Number(cantidad.replace(",", "."));
+    if (!Number.isFinite(escrito) || escrito <= 0) {
       return onError("Poné una cantidad mayor que cero.");
+    }
+
+    // Se guarda siempre en la unidad del ingrediente: la resta del inventario
+    // es número contra número y no sabe de unidades.
+    const n = convertir(escrito, unidadUsada, unidadItem);
+    if (n === null || n <= 0) {
+      return onError(`No se puede pasar de ${unidadUsada} a ${unidadItem}.`);
     }
 
     setOcupado(true);
@@ -231,7 +256,10 @@ function Producto({
               </span>
               <select
                 value={ingrediente}
-                onChange={(e) => setIngrediente(e.target.value)}
+                onChange={(e) => {
+                  setIngrediente(e.target.value);
+                  setUnidadEntrada(null);
+                }}
                 className="w-full rounded-lg border border-white/15 bg-ink px-2 py-1.5 text-[13px]"
               >
                 {inventario.map((i) => (
@@ -242,6 +270,11 @@ function Producto({
               </select>
             </label>
 
+            {/*
+              La unidad va al lado del número y no de placeholder: un
+              placeholder desaparece apenas escribís, o sea justo cuando
+              necesitás saber en qué estás midiendo.
+            */}
             <label className="w-20">
               <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
                 Cuánto
@@ -250,9 +283,28 @@ function Producto({
                 inputMode="decimal"
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
-                placeholder={porNombre.get(ingrediente)?.unidad ?? "0"}
+                placeholder="0"
                 className="w-full rounded-lg border border-white/15 bg-ink px-2 py-1.5 text-center font-mono text-[13px]"
               />
+            </label>
+
+            <label className="w-16">
+              <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+                Unidad
+              </span>
+              <select
+                value={unidadUsada}
+                onChange={(e) => setUnidadEntrada(e.target.value as Unidad)}
+                disabled={opcionesUnidad.length < 2}
+                aria-label="Unidad de la cantidad"
+                className="w-full rounded-lg border border-white/15 bg-ink px-1 py-1.5 text-center font-mono text-[13px] disabled:opacity-60"
+              >
+                {opcionesUnidad.map((u) => (
+                  <option key={u} value={u}>
+                    {u}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="w-28">
@@ -282,6 +334,14 @@ function Producto({
               {ocupado ? "…" : "Sumar"}
             </button>
           </div>
+
+          {/* Que se vea la cuenta antes de guardarla, no después de contar. */}
+          {unidadUsada !== unidadItem && cantidad.trim() !== "" && (
+            <p className="mt-2 font-mono text-[11px] text-ash">
+              = {convertir(Number(cantidad.replace(",", ".")), unidadUsada, unidadItem) ?? "?"}{" "}
+              {unidadItem} de {item?.nombre}
+            </p>
+          )}
 
           <p className="mt-2 font-mono text-[10px] leading-snug text-smoke">
             &quot;Siempre&quot; descuenta en toda venta del producto. Elegí una

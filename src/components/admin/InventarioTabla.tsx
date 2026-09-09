@@ -4,13 +4,20 @@ import { useRef, useState } from "react";
 import {
   actualizarItemInventario,
   borrarItemInventario,
+  cambiarUnidadItem,
   crearItemInventario,
   type ItemInventario,
 } from "@/lib/acciones/inventario";
+import {
+  UNIDADES,
+  convertir,
+  sonCompatibles,
+  type Unidad,
+} from "@/lib/unidades";
 
 /**
- * Inventario manual: se ajusta a mano, sin descuento automático por venta
- * (§2 del brief lo deja fuera del alcance). Persiste en la tabla `inventory`.
+ * El inventario: se ajusta a mano, y además baja solo cuando se entrega un
+ * pedido de un producto con receta (migración 0018). Persiste en `inventory`.
  *
  * Los cambios se pintan de una vez (optimista) y se guardan detrás: en un
  * negocio se ajusta el stock tocando +/- varias veces seguidas, y esperar a
@@ -65,6 +72,40 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
   ) => {
     const r = await actualizarItemInventario(id, patch);
     if (!r.ok) setError(r.error);
+  };
+
+  /**
+   * Cambiar la unidad convierte los números, no solo la etiqueta.
+   *
+   * De kg a g el stock se multiplica por mil y las recetas también —eso lo
+   * hace la base, en una sola transacción—. Entre unidades que no comparten
+   * base (kg → und) no hay conversión posible: nadie sabe cuántos gramos pesa
+   * una lámina de queso, así que se cambia el nombre y los números quedan para
+   * que la persona los ajuste mirando.
+   */
+  const cambiarUnidad = async (item: ItemInventario, nueva: Unidad) => {
+    if (nueva === item.unidad) return;
+
+    const convierte = sonCompatibles(item.unidad, nueva);
+    const previo = items;
+
+    parchar(item.id, {
+      unidad: nueva,
+      ...(convierte
+        ? {
+            cantidad: convertir(item.cantidad, item.unidad, nueva) ?? item.cantidad,
+            umbralAlerta:
+              convertir(item.umbralAlerta, item.unidad, nueva) ??
+              item.umbralAlerta,
+          }
+        : {}),
+    });
+
+    const r = await cambiarUnidadItem(item.id, nueva);
+    if (!r.ok) {
+      setItems(previo);
+      setError(r.error);
+    }
   };
 
   const borrar = async (item: ItemInventario) => {
@@ -191,24 +232,24 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
                     </button>
 
                     {/*
-                      La unidad siempre se pudo cambiar, pero sin recuadro se
-                      leía como una etiqueta y nadie la tocaba: el queso quedó
-                      en kg cuando se cuenta por unidad. Ahora tiene el mismo
-                      marco que la cantidad, que es lo que dice "esto se edita".
+                      Lista cerrada y no texto libre. Escrita a mano, "gr" y
+                      "g" eran dos unidades distintas para el sistema, y la
+                      unidad no era más que una etiqueta al lado de un número.
                     */}
-                    <input
-                      defaultValue={item.unidad}
-                      onBlur={(e) => {
-                        const v = e.target.value.trim();
-                        if (v && v !== item.unidad) {
-                          parchar(item.id, { unidad: v });
-                          guardarCampo(item.id, { unidad: v });
-                        }
-                      }}
+                    <select
+                      value={item.unidad}
+                      onChange={(e) =>
+                        cambiarUnidad(item, e.target.value as Unidad)
+                      }
                       aria-label={`Unidad de ${item.nombre}`}
-                      title="Unidad: kg, und, L…"
-                      className="w-12 rounded-lg border border-white/15 bg-ink px-1.5 py-1.5 text-center font-mono text-[11px] text-smoke outline-none focus:border-white/50 focus:text-white"
-                    />
+                      className="w-16 rounded-lg border border-white/15 bg-ink px-1 py-1.5 text-center font-mono text-[11px] text-smoke outline-none focus:border-white/50 focus:text-white"
+                    >
+                      {UNIDADES.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -255,7 +296,7 @@ function FormAgregar({
 }) {
   const [nombre, setNombre] = useState("");
   const [cantidad, setCantidad] = useState("");
-  const [unidad, setUnidad] = useState("und");
+  const [unidad, setUnidad] = useState<Unidad>("und");
   const [umbral, setUmbral] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -292,7 +333,22 @@ function FormAgregar({
       <div className="grid gap-3 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:items-end">
         <Campo etiqueta="Item" valor={nombre} onChange={setNombre} placeholder="ej: Carne molida" />
         <Campo etiqueta="Cantidad" valor={cantidad} onChange={setCantidad} placeholder="0" mono />
-        <Campo etiqueta="Unidad" valor={unidad} onChange={setUnidad} placeholder="kg" mono />
+        <div>
+          <label className="mb-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+            Unidad
+          </label>
+          <select
+            value={unidad}
+            onChange={(e) => setUnidad(e.target.value as Unidad)}
+            className="w-full rounded-lg border border-white/15 bg-ink px-3 py-2 font-mono text-sm text-white outline-none focus:border-white/50"
+          >
+            {UNIDADES.map((u) => (
+              <option key={u} value={u}>
+                {u}
+              </option>
+            ))}
+          </select>
+        </div>
         <Campo etiqueta="Avisar en" valor={umbral} onChange={setUmbral} placeholder="0" mono />
         <button
           type="submit"
