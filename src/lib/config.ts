@@ -49,7 +49,7 @@ export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
  * Solo tiene sentido volver a `true` para mostrar el flujo completo un martes a
  * las 3 PM, y hay que acordarse de devolverlo.
  */
-export const MODO_DEMO = false;
+export const MODO_DEMO = true;
 
 /**
  * Horario de atención: jueves a domingo, 6:00–11:00 PM (hora de Caracas).
