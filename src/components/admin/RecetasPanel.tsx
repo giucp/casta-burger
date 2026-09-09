@@ -6,9 +6,11 @@ import type { ItemInventario } from "@/lib/acciones/inventario";
 import {
   borrarLinea,
   guardarLinea,
+  guardarProteina,
+  type ProteinaIngrediente,
   type RecetaProducto,
 } from "@/lib/acciones/recetas";
-import { compatibles, convertir, type Unidad } from "@/lib/unidades";
+import { UNIDADES, compatibles, convertir, type Unidad } from "@/lib/unidades";
 
 /**
  * Cuánto lleva cada producto.
@@ -22,14 +24,20 @@ import { compatibles, convertir, type Unidad } from "@/lib/unidades";
  * pregunta real cuando se está cargando: qué falta.
  */
 
+/** El valor del selector cuando la línea es "la proteína que elija el cliente". */
+export const OPCION_PROTEINA = "__proteina__";
+
 export function RecetasPanel({
   inicial,
   inventario,
+  proteinas,
 }: {
   inicial: RecetaProducto[];
   inventario: ItemInventario[];
+  proteinas: ProteinaIngrediente[];
 }) {
   const [recetas, setRecetas] = useState(inicial);
+  const [mapa, setMapa] = useState(proteinas);
   const [abierto, setAbierto] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +81,13 @@ export function RecetasPanel({
 
       {error && <p className="mb-3 font-mono text-[11px] text-casta">{error}</p>}
 
+      <MapaProteinas
+        mapa={mapa}
+        inventario={inventario}
+        onCambio={setMapa}
+        onError={setError}
+      />
+
       {porCategoria.map(([categoria, productos]) => (
         <section key={categoria} className="mb-5">
           <h2 className="mb-2 font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
@@ -100,6 +115,85 @@ export function RecetasPanel({
   );
 }
 
+/**
+ * De qué sale cada proteína.
+ *
+ * Es lo que le da sentido a la línea "la proteína que elija el cliente": sin
+ * esto, un pedido de cordero no tiene de dónde restar. Va arriba y a la vista
+ * porque cuando falta una, esa proteína no descuenta nada y no hay ningún otro
+ * lugar donde eso se note.
+ */
+function MapaProteinas({
+  mapa,
+  inventario,
+  onCambio,
+  onError,
+}: {
+  mapa: ProteinaIngrediente[];
+  inventario: ItemInventario[];
+  onCambio: (m: ProteinaIngrediente[]) => void;
+  onError: (m: string | null) => void;
+}) {
+  const elegido = (p: Proteina) =>
+    mapa.find((m) => m.proteina === p)?.inventarioId ?? "";
+
+  const cambiar = async (p: Proteina, inventarioId: string) => {
+    onError(null);
+    if (!inventarioId) return;
+    const r = await guardarProteina(p, inventarioId);
+    if (!r.ok) return onError(r.error);
+    onCambio([
+      ...mapa.filter((m) => m.proteina !== p),
+      { proteina: p, inventarioId },
+    ]);
+  };
+
+  const faltan = PROTEINAS.filter((p) => !elegido(p));
+
+  return (
+    <div className="mb-5 rounded-card border border-white/8 bg-card p-4">
+      <p className="mb-1 font-mono text-[11px] uppercase tracking-[0.14em] text-smoke">
+        La proteína sale de
+      </p>
+      <p className="mb-3 max-w-prose font-mono text-[10px] leading-snug text-smoke">
+        Se configura una vez. Es lo que permite escribir &quot;240 g de
+        proteína&quot; en la receta en vez de tres líneas casi iguales.
+      </p>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        {PROTEINAS.map((p) => (
+          <label key={p} className="min-w-0">
+            <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
+              {p}
+            </span>
+            <select
+              value={elegido(p)}
+              onChange={(e) => void cambiar(p, e.target.value)}
+              className={`w-full rounded-lg border bg-ink px-2 py-1.5 text-[13px] ${
+                elegido(p) ? "border-white/15" : "border-casta text-casta"
+              }`}
+            >
+              <option value="">— sin definir —</option>
+              {inventario.map((i) => (
+                <option key={i.id} value={i.id}>
+                  {i.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+
+      {faltan.length > 0 && (
+        <p className="mt-2 font-mono text-[11px] text-casta">
+          Sin definir {faltan.join(" y ")}: si alguien pide una de{" "}
+          {faltan[0].toLowerCase()}, no se descuenta nada.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Producto({
   receta,
   inventario,
@@ -117,9 +211,8 @@ function Producto({
   onCambio: (lineas: RecetaProducto["lineas"]) => void;
   onError: (m: string | null) => void;
 }) {
-  const [ingrediente, setIngrediente] = useState(inventario[0]?.id ?? "");
+  const [ingrediente, setIngrediente] = useState(OPCION_PROTEINA);
   const [cantidad, setCantidad] = useState("");
-  const [proteina, setProteina] = useState<string>("");
   const [ocupado, setOcupado] = useState(false);
 
   /**
@@ -134,10 +227,13 @@ function Producto({
    */
   const [unidadEntrada, setUnidadEntrada] = useState<Unidad | null>(null);
 
+  const esLineaProteina = ingrediente === OPCION_PROTEINA;
   const item = porNombre.get(ingrediente);
-  const unidadItem: Unidad = item?.unidad ?? "und";
+  // La línea de proteína no hereda unidad de nadie: se escribe y se guarda tal
+  // cual, y el descuento la convierte a la del ingrediente que toque.
+  const unidadItem: Unidad = esLineaProteina ? "g" : (item?.unidad ?? "und");
   const unidadUsada: Unidad = unidadEntrada ?? unidadItem;
-  const opcionesUnidad = compatibles(unidadItem);
+  const opcionesUnidad = esLineaProteina ? [...UNIDADES] : compatibles(unidadItem);
 
   const agregar = async () => {
     onError(null);
@@ -148,7 +244,9 @@ function Producto({
 
     // Se guarda siempre en la unidad del ingrediente: la resta del inventario
     // es número contra número y no sabe de unidades.
-    const n = convertir(escrito, unidadUsada, unidadItem);
+    const n = esLineaProteina
+      ? escrito
+      : convertir(escrito, unidadUsada, unidadItem);
     if (n === null || n <= 0) {
       return onError(`No se puede pasar de ${unidadUsada} a ${unidadItem}.`);
     }
@@ -156,27 +254,29 @@ function Producto({
     setOcupado(true);
     const r = await guardarLinea({
       menuItemId: receta.menuItemId,
-      inventarioId: ingrediente,
-      proteina: (proteina || null) as Proteina | null,
+      inventarioId: esLineaProteina ? null : ingrediente,
+      esProteina: esLineaProteina,
+      unidad: esLineaProteina ? unidadUsada : null,
+      proteina: null,
       cantidad: n,
     });
     setOcupado(false);
     if (!r.ok) return onError(r.error);
 
-    // Pisa la línea del mismo par si ya existía, igual que hace la base.
-    const sinLaVieja = receta.lineas.filter(
-      (l) =>
-        !(
-          l.inventarioId === ingrediente &&
-          (l.proteina ?? "") === proteina
-        ),
+    // Pisa la línea equivalente si ya existía, igual que hace la base.
+    const sinLaVieja = receta.lineas.filter((l) =>
+      esLineaProteina
+        ? !l.esProteina
+        : !(l.inventarioId === ingrediente && l.proteina === null),
     );
     onCambio([
       ...sinLaVieja,
       {
-        id: `nueva-${ingrediente}-${proteina}`,
-        inventarioId: ingrediente,
-        proteina: (proteina || null) as Proteina | null,
+        id: `nueva-${ingrediente}`,
+        inventarioId: esLineaProteina ? null : ingrediente,
+        esProteina: esLineaProteina,
+        unidad: esLineaProteina ? unidadUsada : null,
+        proteina: null,
         cantidad: n,
       },
     ]);
@@ -218,22 +318,31 @@ function Producto({
           {receta.lineas.length > 0 && (
             <ul className="mb-3">
               {receta.lineas.map((l) => {
-                const ing = porNombre.get(l.inventarioId);
+                const ing = l.inventarioId
+                  ? porNombre.get(l.inventarioId)
+                  : undefined;
                 return (
                   <li
                     key={l.id}
                     className="flex items-center gap-2 border-b border-white/5 py-1.5 last:border-b-0"
                   >
                     <span className="min-w-0 flex-1 truncate text-[13px]">
-                      {ing?.nombre ?? "ingrediente borrado"}
+                      {l.esProteina
+                        ? "Proteína"
+                        : (ing?.nombre ?? "ingrediente borrado")}
                     </span>
+                    {l.esProteina && (
+                      <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em]">
+                        la que elija
+                      </span>
+                    )}
                     {l.proteina && (
                       <span className="shrink-0 rounded-full bg-white/10 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em]">
                         solo {l.proteina}
                       </span>
                     )}
                     <span className="shrink-0 font-mono text-[13px] font-bold">
-                      {l.cantidad} {ing?.unidad ?? ""}
+                      {l.cantidad} {l.esProteina ? l.unidad : (ing?.unidad ?? "")}
                     </span>
                     <button
                       type="button"
@@ -262,6 +371,14 @@ function Producto({
                 }}
                 className="w-full rounded-lg border border-white/15 bg-ink px-2 py-1.5 text-[13px]"
               >
+                {/*
+                  Primera de la lista porque es la que más se usa: toda
+                  hamburguesa lleva proteína, y es la única línea que no se
+                  puede nombrar de antemano.
+                */}
+                <option value={OPCION_PROTEINA}>
+                  Proteína — la que elija el cliente
+                </option>
                 {inventario.map((i) => (
                   <option key={i.id} value={i.id}>
                     {i.nombre}
@@ -307,24 +424,6 @@ function Producto({
               </select>
             </label>
 
-            <label className="w-28">
-              <span className="mb-1 block font-mono text-[10px] uppercase tracking-[0.1em] text-smoke">
-                Proteína
-              </span>
-              <select
-                value={proteina}
-                onChange={(e) => setProteina(e.target.value)}
-                className="w-full rounded-lg border border-white/15 bg-ink px-2 py-1.5 text-[13px]"
-              >
-                <option value="">Siempre</option>
-                {PROTEINAS.map((p) => (
-                  <option key={p} value={p}>
-                    Solo {p}
-                  </option>
-                ))}
-              </select>
-            </label>
-
             <button
               type="button"
               onClick={() => void agregar()}
@@ -336,17 +435,24 @@ function Producto({
           </div>
 
           {/* Que se vea la cuenta antes de guardarla, no después de contar. */}
-          {unidadUsada !== unidadItem && cantidad.trim() !== "" && (
-            <p className="mt-2 font-mono text-[11px] text-ash">
-              = {convertir(Number(cantidad.replace(",", ".")), unidadUsada, unidadItem) ?? "?"}{" "}
-              {unidadItem} de {item?.nombre}
-            </p>
-          )}
+          {!esLineaProteina &&
+            unidadUsada !== unidadItem &&
+            cantidad.trim() !== "" && (
+              <p className="mt-2 font-mono text-[11px] text-ash">
+                ={" "}
+                {convertir(
+                  Number(cantidad.replace(",", ".")),
+                  unidadUsada,
+                  unidadItem,
+                ) ?? "?"}{" "}
+                {unidadItem} de {item?.nombre}
+              </p>
+            )}
 
           <p className="mt-2 font-mono text-[10px] leading-snug text-smoke">
-            &quot;Siempre&quot; descuenta en toda venta del producto. Elegí una
-            proteína solo para lo que cambia según lo que pidió el cliente —la
-            carne, el pollo—, o descontarías carne en una de pollo.
+            {esLineaProteina
+              ? "Sale de carne, cordero o pollo según lo que pidió el cliente. Una sola línea: entre dos hamburguesas del mismo tipo no cambia nada más."
+              : "Todo lo que cargues acá se descuenta en cada venta del producto."}
           </p>
         </div>
       )}

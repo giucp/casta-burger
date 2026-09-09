@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { PROTEINAS, type Proteina } from "@/lib/menu";
+import { esUnidad, type Unidad } from "@/lib/unidades";
 
 /**
  * Las recetas: cuánto de cada ingrediente lleva cada producto.
@@ -15,10 +16,27 @@ import { PROTEINAS, type Proteina } from "@/lib/menu";
 
 export type LineaReceta = {
   id: string;
-  inventarioId: string;
-  /** null = la línea aplica siempre, sin importar la proteína elegida */
+  /** null cuando la línea es la proteína: todavía no se sabe cuál. */
+  inventarioId: string | null;
+  /**
+   * `true` = "la proteína que elija el cliente". No nombra un ingrediente: se
+   * resuelve al entregar, contra la tabla `proteina_ingrediente`.
+   */
+  esProteina: boolean;
+  /** La unidad en que está escrito el número. Solo la línea de proteína la usa. */
+  unidad: Unidad | null;
+  /**
+   * Filtro viejo: null = la línea aplica siempre. Se dejó de ofrecer al cargar
+   * —la proteína ahora es su propia línea— pero las que existan siguen valiendo.
+   */
   proteina: Proteina | null;
   cantidad: number;
+};
+
+/** Qué item del inventario sale por cada proteína. */
+export type ProteinaIngrediente = {
+  proteina: Proteina;
+  inventarioId: string;
 };
 
 export type RecetaProducto = {
@@ -67,7 +85,9 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
         .order("orden"),
       supabase
         .from("recetas")
-        .select("id, menu_item_id, inventory_id, proteina, cantidad"),
+        .select(
+          "id, menu_item_id, inventory_id, proteina, cantidad, es_proteina, unidad",
+        ),
     ]);
 
   if (e1 || e2 || !productos) {
@@ -81,6 +101,8 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
     lista.push({
       id: f.id,
       inventarioId: f.inventory_id,
+      esProteina: f.es_proteina === true,
+      unidad: f.unidad && esUnidad(f.unidad) ? f.unidad : null,
       proteina: esProteina(f.proteina) ? f.proteina : null,
       cantidad: num(f.cantidad),
     });
@@ -103,7 +125,11 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
  */
 export async function guardarLinea(datos: {
   menuItemId: string;
-  inventarioId: string;
+  /** null solo cuando la línea es la proteína elegida. */
+  inventarioId: string | null;
+  esProteina?: boolean;
+  /** Obligatoria en la línea de proteína: no hay ingrediente del que heredarla. */
+  unidad?: Unidad | null;
   proteina: Proteina | null;
   cantidad: number;
 }): Promise<Resultado> {
@@ -111,12 +137,22 @@ export async function guardarLinea(datos: {
     return { ok: false, error: "La cantidad tiene que ser mayor que cero." };
   }
 
+  const esProt = datos.esProteina === true;
+  if (esProt && !datos.unidad) {
+    return { ok: false, error: "Falta la unidad de la proteína." };
+  }
+  if (!esProt && !datos.inventarioId) {
+    return { ok: false, error: "Falta el ingrediente." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("recetas").upsert(
     {
       menu_item_id: datos.menuItemId,
-      inventory_id: datos.inventarioId,
-      proteina: datos.proteina,
+      inventory_id: esProt ? null : datos.inventarioId,
+      es_proteina: esProt,
+      unidad: esProt ? datos.unidad : null,
+      proteina: esProt ? null : datos.proteina,
       cantidad: datos.cantidad,
       updated_at: new Date().toISOString(),
     },
@@ -126,6 +162,54 @@ export async function guardarLinea(datos: {
   if (error) {
     console.error("No se pudo guardar la línea de receta:", error.message);
     return { ok: false, error: "No se pudo guardar. Probá de nuevo." };
+  }
+  return { ok: true };
+}
+
+/**
+ * De qué item del inventario sale cada proteína.
+ *
+ * Sin esto, la línea "la proteína que elija el cliente" no sabe qué restar. La
+ * migración 0021 la deja cargada con lo que ya existía en el inventario; esta
+ * pantalla es para el día que un nombre cambie o se agregue una proteína.
+ */
+export async function listarProteinas(): Promise<ProteinaIngrediente[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("proteina_ingrediente")
+    .select("proteina, inventory_id");
+
+  if (error) {
+    console.error("No se pudo leer el mapa de proteínas:", error.message);
+    return [];
+  }
+  return (data as { proteina: string; inventory_id: string }[])
+    .filter((f) => esProteina(f.proteina))
+    .map((f) => ({
+      proteina: f.proteina as Proteina,
+      inventarioId: f.inventory_id,
+    }));
+}
+
+export async function guardarProteina(
+  proteina: Proteina,
+  inventarioId: string,
+): Promise<Resultado> {
+  if (!esProteina(proteina)) return { ok: false, error: "Proteína no válida." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("proteina_ingrediente").upsert(
+    {
+      proteina,
+      inventory_id: inventarioId,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "proteina" },
+  );
+
+  if (error) {
+    console.error("No se pudo guardar la proteína:", error.message);
+    return { ok: false, error: "No se pudo guardar." };
   }
   return { ok: true };
 }
