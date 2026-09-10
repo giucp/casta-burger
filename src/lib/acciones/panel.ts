@@ -61,8 +61,10 @@ export async function panelHoy(): Promise<PanelHoy> {
     dia: hoy,
     pedidos: 0,
     ventas: 0,
-    compras: 0,
-    gananciaNeta: 0,
+    costoVendido: 0,
+    sinCosto: 0,
+    ganancia: 0,
+    gastos: 0,
   };
 
   return {

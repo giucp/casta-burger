@@ -135,13 +135,30 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
       {/* La plata del día */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         <Dinero etiqueta="Ventas hoy" valor={panel.resumen.ventas} />
-        <Dinero etiqueta="Costos hoy" valor={panel.resumen.compras} tono="malo" />
+        {/*
+          Lo que costó lo que salió por la puerta, no lo que se gastó hoy.
+          Comprar carne para la semana es un gasto de la semana: puesto acá,
+          una buena noche de servicio aparecía en rojo. El gasto vive en
+          Costos, que es la escala a la que significa algo.
+        */}
         <Dinero
-          etiqueta="Ganancia hoy"
-          valor={panel.resumen.gananciaNeta}
-          tono={panel.resumen.gananciaNeta >= 0 ? "bueno" : "malo"}
+          etiqueta="Costo de lo vendido"
+          valor={panel.resumen.costoVendido}
+          tono="malo"
+        />
+        <Dinero
+          etiqueta="Ganó hoy"
+          valor={panel.resumen.ganancia}
+          tono={panel.resumen.ganancia >= 0 ? "bueno" : "malo"}
         />
       </div>
+
+      {panel.resumen.sinCosto > 0 && (
+        <p className="mb-6 -mt-3 font-mono text-[11px] text-casta">
+          Hay ingredientes vendidos sin costo cargado: la ganancia de hoy sale
+          más alta de lo que es. Cargalos en Costos.
+        </p>
+      )}
 
       {panel.bajoStock.length > 0 && (
         <div className="mb-6 rounded-card border border-casta/40 bg-casta/10 px-4 py-3">
@@ -244,7 +261,7 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
                 <th className="px-4 py-2.5 font-normal">Día</th>
                 <th className="px-4 py-2.5 text-right font-normal">Entregados</th>
                 <th className="px-4 py-2.5 text-right font-normal">Ventas</th>
-                <th className="px-4 py-2.5 text-right font-normal">Costos</th>
+                <th className="px-4 py-2.5 text-right font-normal">Costo</th>
                 <th className="px-4 py-2.5 text-right font-normal">Ganancia</th>
               </tr>
             </thead>
@@ -255,14 +272,14 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
                   <td className="px-4 py-3 text-right">{f.pedidos}</td>
                   <td className="px-4 py-3 text-right">{usd(f.ventas)}</td>
                   <td className="px-4 py-3 text-right text-smoke">
-                    {f.compras > 0 ? usd(f.compras) : "—"}
+                    {f.costoVendido > 0 ? usd(f.costoVendido) : "—"}
                   </td>
                   <td
                     className={`px-4 py-3 text-right font-bold ${
-                      f.gananciaNeta >= 0 ? "text-emerald-400" : "text-casta"
+                      f.ganancia >= 0 ? "text-emerald-400" : "text-casta"
                     }`}
                   >
-                    {usd(f.gananciaNeta)}
+                    {usd(f.ganancia)}
                   </td>
                 </tr>
               ))}

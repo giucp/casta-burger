@@ -30,7 +30,7 @@ export async function resumenDiario(dias = 14): Promise<ResumenDia[]> {
   const supabase = await createClient();
   const desde = new Date(Date.now() - dias * 86_400_000);
 
-  const [ordenes, compras] = await Promise.all([
+  const [ordenes, compras, costos] = await Promise.all([
     supabase
       .from("orders")
       .select("created_at, total")
@@ -40,18 +40,36 @@ export async function resumenDiario(dias = 14): Promise<ResumenDia[]> {
       .from("purchases")
       .select("fecha, monto")
       .gte("fecha", diaCaracas(desde)),
+    // Lo que costaron los ingredientes de lo vendido, por día. Sale de
+    // `consumos`, que guarda el detalle exacto de cada pedido entregado —y
+    // cuya fila se borra al anular la venta, así que lo que queda es lo que
+    // de verdad se vendió.
+    supabase
+      .from("costo_vendido_por_dia")
+      .select("dia, costo, lineas_sin_costo")
+      .gte("dia", diaCaracas(desde)),
   ]);
 
   if (ordenes.error)
     console.error("No se pudieron leer las ventas:", ordenes.error.message);
   if (compras.error)
     console.error("No se pudieron leer las compras:", compras.error.message);
+  if (costos.error)
+    console.error("No se pudo leer el costo vendido:", costos.error.message);
 
   const porDia = new Map<string, ResumenDia>();
   const fila = (dia: string): ResumenDia => {
     let f = porDia.get(dia);
     if (!f) {
-      f = { dia, pedidos: 0, ventas: 0, compras: 0, gananciaNeta: 0 };
+      f = {
+        dia,
+        pedidos: 0,
+        ventas: 0,
+        costoVendido: 0,
+        sinCosto: 0,
+        ganancia: 0,
+        gastos: 0,
+      };
       porDia.set(dia, f);
     }
     return f;
@@ -64,15 +82,21 @@ export async function resumenDiario(dias = 14): Promise<ResumenDia[]> {
   }
   for (const c of compras.data ?? []) {
     const f = fila(c.fecha as string);
-    f.compras += Number(c.monto);
+    f.gastos += Number(c.monto);
+  }
+  for (const c of costos.data ?? []) {
+    const f = fila(c.dia as string);
+    f.costoVendido += Number(c.costo);
+    f.sinCosto += Number(c.lineas_sin_costo);
   }
 
   return [...porDia.values()]
     .map((f) => ({
       ...f,
       ventas: r2(f.ventas),
-      compras: r2(f.compras),
-      gananciaNeta: r2(f.ventas - f.compras),
+      costoVendido: r2(f.costoVendido),
+      gastos: r2(f.gastos),
+      ganancia: r2(f.ventas - f.costoVendido),
     }))
     .sort((a, b) => b.dia.localeCompare(a.dia));
 }
