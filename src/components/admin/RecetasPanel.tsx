@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { PROTEINAS, type Proteina } from "@/lib/menu";
 import type { ItemInventario } from "@/lib/acciones/inventario";
+import type { CostoIngrediente } from "@/lib/admin/datos";
+import { costoDeReceta } from "@/lib/costeo";
+import { usd } from "@/lib/format";
 import {
   borrarLinea,
   guardarLinea,
@@ -31,10 +34,12 @@ export function RecetasPanel({
   inicial,
   inventario,
   proteinas,
+  costos,
 }: {
   inicial: RecetaProducto[];
   inventario: ItemInventario[];
   proteinas: ProteinaIngrediente[];
+  costos: CostoIngrediente[];
 }) {
   const [recetas, setRecetas] = useState(inicial);
   const [mapa, setMapa] = useState(proteinas);
@@ -42,6 +47,7 @@ export function RecetasPanel({
   const [error, setError] = useState<string | null>(null);
 
   const porNombre = new Map(inventario.map((i) => [i.id, i]));
+  const costoDe = new Map(costos.map((c) => [c.inventarioId, c]));
   const conReceta = recetas.filter((r) => r.lineas.length > 0).length;
 
   const refrescarLineas = (menuItemId: string, lineas: RecetaProducto["lineas"]) =>
@@ -100,6 +106,8 @@ export function RecetasPanel({
                 receta={r}
                 inventario={inventario}
                 porNombre={porNombre}
+                costoDe={costoDe}
+                proteinas={mapa}
                 abierto={abierto === r.menuItemId}
                 onAbrir={() =>
                   setAbierto(abierto === r.menuItemId ? null : r.menuItemId)
@@ -194,10 +202,66 @@ function MapaProteinas({
   );
 }
 
+/**
+ * Cuánto cuesta hacerlo y cuánto queda.
+ *
+ * Va pegado al producto en la lista, no escondido adentro: la pregunta "¿este
+ * precio me sirve?" se hace mirando la carta entera, no producto por producto.
+ *
+ * Cuando la proteína cambia el costo se muestra un rango, porque es la verdad:
+ * una de cordero deja menos que una de pollo, y promediarlo esconde justo el
+ * caso que conviene mirar.
+ */
+function Margen({
+  receta,
+  costoDe,
+  porNombre,
+  proteinas,
+}: {
+  receta: RecetaProducto;
+  costoDe: Map<string, CostoIngrediente>;
+  porNombre: Map<string, ItemInventario>;
+  proteinas: ProteinaIngrediente[];
+}) {
+  const costo = costoDeReceta(receta, costoDe, porNombre, proteinas);
+  if (!costo || receta.precio === null) return null;
+
+  const varia = Math.abs(costo.max - costo.min) >= 0.005;
+  const ganaMin = receta.precio - costo.max;
+  const ganaMax = receta.precio - costo.min;
+  const pct = receta.precio > 0 ? (ganaMin / receta.precio) * 100 : 0;
+
+  return (
+    <p className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pb-2.5 font-mono text-[11px] text-smoke">
+      <span>
+        cuesta{" "}
+        <b className="text-ash">
+          {varia ? `${usd(costo.min)}–${usd(costo.max)}` : usd(costo.min)}
+        </b>
+      </span>
+      <span>
+        gana{" "}
+        <b className={ganaMin > 0 ? "text-emerald-400" : "text-casta"}>
+          {varia ? `${usd(ganaMin)}–${usd(ganaMax)}` : usd(ganaMin)}
+        </b>{" "}
+        ({Math.round(pct)}%)
+      </span>
+      {!costo.completo && (
+        <span className="text-casta">
+          falta el costo de {costo.faltan}{" "}
+          {costo.faltan === 1 ? "ingrediente" : "ingredientes"}
+        </span>
+      )}
+    </p>
+  );
+}
+
 function Producto({
   receta,
   inventario,
   porNombre,
+  costoDe,
+  proteinas,
   abierto,
   onAbrir,
   onCambio,
@@ -206,6 +270,8 @@ function Producto({
   receta: RecetaProducto;
   inventario: ItemInventario[];
   porNombre: Map<string, ItemInventario>;
+  costoDe: Map<string, CostoIngrediente>;
+  proteinas: ProteinaIngrediente[];
   abierto: boolean;
   onAbrir: () => void;
   onCambio: (lineas: RecetaProducto["lineas"]) => void;
@@ -312,6 +378,8 @@ function Producto({
         </span>
         <span className="shrink-0 font-mono text-smoke">{abierto ? "−" : "+"}</span>
       </button>
+
+      <Margen receta={receta} costoDe={costoDe} porNombre={porNombre} proteinas={proteinas} />
 
       {abierto && (
         <div className="border-t border-white/8 bg-white/[0.02] px-4 py-3">

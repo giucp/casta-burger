@@ -85,7 +85,7 @@ export const APP_ADMIN: App = {
   nombre: `${BUSINESS.nombre} Admin`,
   corto: "Casta Admin",
   descripcion:
-    "El panel del negocio: pedidos, ventas del día, menú, inventario y compras.",
+    "El panel del negocio: pedidos, ventas del día, menú, inventario y costos.",
   inicio: "/admin",
   iconos: "/icons/admin",
 };

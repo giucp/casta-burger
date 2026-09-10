@@ -26,13 +26,13 @@ const ROLES: { valor: Rol; titulo: string; explica: string }[] = [
     valor: "encargado",
     titulo: "Encargado",
     explica:
-      "El día a día: pedidos, menú, inventario y compras. No reparte accesos ni anula ventas.",
+      "El día a día: pedidos, menú, inventario y costos. No reparte accesos ni anula ventas.",
   },
   {
     valor: "dueno",
     titulo: "Dueño",
     explica:
-      "Todo: las ventas del día, las compras, los precios y quién entra acá.",
+      "Todo: las ventas del día, los costos, los precios y quién entra acá.",
   },
 ];
 

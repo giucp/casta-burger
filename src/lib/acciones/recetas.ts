@@ -43,6 +43,8 @@ export type RecetaProducto = {
   menuItemId: string;
   nombre: string;
   categoria: string;
+  /** Precio de venta. null = "Consultar". */
+  precio: number | null;
   lineas: LineaReceta[];
 };
 
@@ -68,7 +70,7 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
     await Promise.all([
       supabase
         .from("menu_items")
-        .select("id, nombre, categoria, orden")
+        .select("id, nombre, categoria, orden, precio")
         // Solo lo que se arma en la cocina con ingredientes: las hamburguesas
         // y las papas. Nada más tiene una receta que el dueño pueda escribir.
         //
@@ -113,6 +115,7 @@ export async function listarRecetas(): Promise<RecetaProducto[]> {
     menuItemId: p.id,
     nombre: p.nombre,
     categoria: p.categoria,
+    precio: p.precio === null ? null : num(p.precio),
     lineas: porProducto.get(p.id) ?? [],
   }));
 }

@@ -3,6 +3,8 @@
  * Los datos viven en Supabase; ver src/lib/acciones/.
  */
 
+import type { Unidad } from "@/lib/unidades";
+
 /** Tabla `purchases` */
 export type Compra = {
   id: string;
@@ -11,6 +13,24 @@ export type Compra = {
   categoria: string;
   /** ISO yyyy-mm-dd */
   fecha: string;
+  /**
+   * El ingrediente que se compró, cuando el gasto es de uno. En null van los
+   * gastos que no son ingrediente de nada —el gas, las bolsas, el delivery—,
+   * que cuentan en la caja pero no en el costo de un producto.
+   */
+  inventarioId: string | null;
+  /** Cuánto se compró, en `unidad`. Solo cuando hay ingrediente. */
+  cantidad: number | null;
+  unidad: Unidad | null;
+};
+
+/** El costo por unidad de inventario de un ingrediente, según su última compra. */
+export type CostoIngrediente = {
+  inventarioId: string;
+  unidad: Unidad;
+  costoUnitario: number;
+  /** Fecha de la compra de la que salió este costo. */
+  desde: string;
 };
 
 /** Una fila del resumen financiero por día */

@@ -135,7 +135,7 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
       {/* La plata del día */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         <Dinero etiqueta="Ventas hoy" valor={panel.resumen.ventas} />
-        <Dinero etiqueta="Compras hoy" valor={panel.resumen.compras} tono="malo" />
+        <Dinero etiqueta="Costos hoy" valor={panel.resumen.compras} tono="malo" />
         <Dinero
           etiqueta="Ganancia hoy"
           valor={panel.resumen.gananciaNeta}
@@ -244,7 +244,7 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
                 <th className="px-4 py-2.5 font-normal">Día</th>
                 <th className="px-4 py-2.5 text-right font-normal">Entregados</th>
                 <th className="px-4 py-2.5 text-right font-normal">Ventas</th>
-                <th className="px-4 py-2.5 text-right font-normal">Compras</th>
+                <th className="px-4 py-2.5 text-right font-normal">Costos</th>
                 <th className="px-4 py-2.5 text-right font-normal">Ganancia</th>
               </tr>
             </thead>
