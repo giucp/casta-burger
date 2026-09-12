@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usd } from "@/lib/format";
 import { fechaCorta } from "@/lib/admin/datos";
 import {
@@ -8,7 +8,7 @@ import {
   ESTADO_INFO,
   type Pedido,
 } from "@/lib/admin/pedidos";
-import { panelHoy, type PanelHoy } from "@/lib/acciones/panel";
+import { panelHoy, pulsoHoy, type PanelHoy } from "@/lib/acciones/panel";
 import { anularVenta, restaurarVenta } from "@/lib/acciones/ventas";
 import { linkWhatsAppCliente } from "@/lib/whatsapp";
 import { createClient } from "@/lib/supabase/client";
@@ -34,12 +34,54 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
   const [enVivo, setEnVivo] = useState(false);
   const ahora = useAhora();
 
+  /** El panel de ahora, para leerlo sin volver a crear los callbacks. */
+  const ultimo = useRef(panel);
+  useEffect(() => {
+    ultimo.current = panel;
+  }, [panel]);
+
   const refrescar = useCallback(async () => {
     setPanel(await panelHoy());
   }, []);
 
-  // Mismo patrón que la cocina: Realtime con el token de la sesión, y un
-  // respaldo cada 15 s por si la suscripción se cae.
+  /**
+   * El refresco barato: solo pedidos y stock.
+   *
+   * Los catorce días y la plata del día se vuelven a pedir únicamente cuando
+   * cambió la cantidad de entregados o de anulados, que es lo único que los
+   * mueve. Antes, cada vez que un pedido pasaba a "preparando" se recalculaba
+   * todo el histórico para llegar exactamente al mismo número.
+   */
+  const refrescarPulso = useCallback(async () => {
+    const p = await pulsoHoy();
+    const antes = ultimo.current;
+    const cambioLaPlata =
+      p.entregadosHoy.length !== antes.entregadosHoy.length ||
+      p.anuladosHoy.length !== antes.anuladosHoy.length ||
+      // Cruzó la medianoche: el día es otro y el resumen que se muestra es el
+      // de ayer. Sin esto se quedaría viejo hasta la próxima venta.
+      p.hoy !== antes.hoy;
+
+    if (cambioLaPlata) {
+      setPanel(await panelHoy());
+    } else {
+      setPanel((a) => ({ ...a, ...p }));
+    }
+  }, []);
+
+  /**
+   * Un pedido que avanza dispara un evento por estado: nuevo → preparando →
+   * listo → entregado son cuatro en pocos segundos, y con tres pedidos en
+   * juego se multiplican. Se agrupan en un solo refresco.
+   */
+  const pendiente = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pedirRefresco = useCallback(() => {
+    if (pendiente.current) clearTimeout(pendiente.current);
+    pendiente.current = setTimeout(() => void refrescarPulso(), 400);
+  }, [refrescarPulso]);
+
+  // Mismo patrón que la cocina: Realtime con el token de la sesión, más el
+  // respaldo de abajo por si la suscripción se cae.
   useEffect(() => {
     const supabase = createClient();
     let canal: ReturnType<typeof supabase.channel> | null = null;
@@ -60,7 +102,7 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
           "postgres_changes",
           { event: "*", schema: "public", table: "orders" },
           () => {
-            void refrescar();
+            pedirRefresco();
           },
         )
         .subscribe((estado) => {
@@ -70,14 +112,25 @@ export function PanelDueno({ inicial }: { inicial: PanelHoy }) {
 
     return () => {
       vivo = false;
+      if (pendiente.current) clearTimeout(pendiente.current);
       if (canal) void supabase.removeChannel(canal);
     };
-  }, [refrescar]);
+  }, [pedirRefresco]);
 
+  /**
+   * El respaldo, al ritmo que corresponde.
+   *
+   * Con Realtime conectado los pedidos llegan solos, así que consultar cada
+   * 15 s era trabajo de más: en una noche de servicio son casi 240 consultas
+   * que no cambian nada. Pero no se apaga del todo —una suscripción puede
+   * quedar viva y dejar de entregar sin avisar— así que sigue habiendo una
+   * consulta por minuto, que además es la barata.
+   */
   useEffect(() => {
-    const id = setInterval(() => void refrescar(), 15_000);
+    const cada = enVivo ? 60_000 : 10_000;
+    const id = setInterval(() => void refrescarPulso(), cada);
     return () => clearInterval(id);
-  }, [refrescar]);
+  }, [refrescarPulso, enVivo]);
 
   const sinTomar = panel.activos.filter((p) => p.estado === "nuevo");
   const preparando = panel.activos.filter((p) => p.estado === "preparando");

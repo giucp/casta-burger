@@ -39,11 +39,26 @@ function diaCaracas(fecha: Date): string {
   }).format(fecha);
 }
 
-export async function panelHoy(): Promise<PanelHoy> {
-  const [pedidos, inventario, historico, hoy] = await Promise.all([
+/**
+ * Lo que se mueve durante el servicio: los pedidos y el stock.
+ *
+ * Va aparte del resumen financiero porque cambia a otro ritmo. Un pedido que
+ * pasa de "nuevo" a "preparando" mueve esto y no mueve la plata, y hasta acá
+ * cada uno de esos toques recalculaba también los catorce días —tres consultas
+ * más, una de ellas sobre `consumos`— para llegar al mismo número.
+ */
+export type PulsoHoy = {
+  hoy: string;
+  activos: Pedido[];
+  entregadosHoy: Pedido[];
+  anuladosHoy: Pedido[];
+  bajoStock: ItemInventario[];
+};
+
+export async function pulsoHoy(): Promise<PulsoHoy> {
+  const [pedidos, inventario, hoy] = await Promise.all([
     listarPedidos(2),
     listarInventario(),
-    resumenDiario(),
     hoyCaracas(),
   ]);
 
@@ -54,11 +69,20 @@ export async function panelHoy(): Promise<PanelHoy> {
 
   const deHoy = (p: Pedido) => diaCaracas(new Date(p.creadoISO)) === hoy;
 
-  const entregadosHoy = pedidos.filter((p) => p.estado === "entregado" && deHoy(p));
-  const anuladosHoy = pedidos.filter((p) => p.estado === "cancelado" && deHoy(p));
+  return {
+    hoy,
+    activos,
+    entregadosHoy: pedidos.filter((p) => p.estado === "entregado" && deHoy(p)),
+    anuladosHoy: pedidos.filter((p) => p.estado === "cancelado" && deHoy(p)),
+    bajoStock: inventario.filter((i) => i.cantidad <= i.umbralAlerta),
+  };
+}
 
-  const resumen = historico.find((f) => f.dia === hoy) ?? {
-    dia: hoy,
+export async function panelHoy(): Promise<PanelHoy> {
+  const [pulso, historico] = await Promise.all([pulsoHoy(), resumenDiario()]);
+
+  const resumen = historico.find((f) => f.dia === pulso.hoy) ?? {
+    dia: pulso.hoy,
     pedidos: 0,
     ventas: 0,
     costoVendido: 0,
@@ -67,13 +91,5 @@ export async function panelHoy(): Promise<PanelHoy> {
     gastos: 0,
   };
 
-  return {
-    hoy,
-    activos,
-    entregadosHoy,
-    anuladosHoy,
-    resumen,
-    historico,
-    bajoStock: inventario.filter((i) => i.cantidad <= i.umbralAlerta),
-  };
+  return { ...pulso, resumen, historico };
 }
