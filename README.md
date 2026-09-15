@@ -1,16 +1,22 @@
 # Casta Burger — web + pedidos + back-office
 
-Web pública y sistema de pedidos para **Casta Burger** (Alto Barinas, Barinas, Venezuela).
-Una sola app con dos caras: la web del cliente y `/admin` con la pantalla de cocina en vivo.
+Web pública y sistema de pedidos para **Casta Burger** (Alto Barinas, Barinas,
+Venezuela). Una sola app con tres caras: la web del cliente, el panel del dueño
+y la pantalla de cocina en vivo, instalables como tres apps por separado.
 
 **En vivo:** https://casta-burger.vercel.app
 
+El sistema lo desarrolla y opera **TaquionLabs**; el negocio paga una cuota
+mensual por el servicio (ver [La suscripción del servicio](#la-suscripción-del-servicio)).
+
 El documento maestro es [`docs/casta_burger_brief.md`](docs/casta_burger_brief.md).
-El diseño aprobado es [`docs/casta_diseno.html`](docs/casta_diseno.html) — es la fuente de verdad visual.
+El diseño aprobado es [`docs/casta_diseno.html`](docs/casta_diseno.html) — es la
+fuente de verdad visual.
 
 ## Stack
 
-Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Postgres + Auth + Realtime + Storage) · Vercel.
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (Postgres + Auth
++ Realtime + Storage) · Vercel.
 
 ## Correr en local
 
@@ -20,139 +26,41 @@ cp .env.example .env.local   # rellenar con las llaves de Supabase
 npm run dev
 ```
 
+Las tres llaves de Supabase (`NEXT_PUBLIC_SUPABASE_URL`, la `anon` y la
+`service_role`) salen del panel de Supabase → Project Settings → API. **No se
+pueden bajar con `vercel env pull`**: están marcadas como secretas y ese comando
+devuelve `[SENSITIVE]` en su lugar. Hay que copiarlas a mano.
+
 ## Base de datos
 
-El proyecto de Supabase vive en una cuenta aparte de la personal del
-desarrollador. Las migraciones están en [`supabase/migrations/`](supabase/migrations)
-y se corren pegándolas en el SQL Editor, en orden:
+Las migraciones están en [`supabase/migrations/`](supabase/migrations) y se
+corren pegándolas en el SQL Editor de Supabase, **en orden**. Todas son seguras
+de correr de nuevo (usan `if not exists`, `create or replace` y
+`on conflict`), así que reejecutarlas actualiza en vez de duplicar.
+
+Las primeras arman el esquema, el menú y las fotos (`0001`–`0017`). De ahí en
+adelante:
 
 | Migración | Qué hace |
 |---|---|
-| `0001_esquema_inicial.sql` | Tablas, vistas de finanzas, RLS y Realtime |
-| `0002_menu_real.sql` | Columnas `tags` y `slug`, y carga el menú |
-| `0003_promos.sql` | Categoría `Promos` y columna `precio_suelto` |
-| `0004_menu_actualizado.sql` | Menú de julio: sin White Meal, bebidas con precio |
-| `0005_quitar_nevada.sql` | Saca la Nevada de la carta |
-| `0006_verificar_realtime.sql` | Asegura Realtime en los pedidos |
-| `0007_menu_item_borrable.sql` | Borrar un producto no rompe el histórico |
-| `0008_menu_agotado_visible.sql` | El público ve lo agotado, atenuado |
-| `0009_quitar_combo.sql` | Fuera la categoría Combo (era la promo 3 Cheese) |
-| `0010_push_suscripciones.sql` | Tabla de suscripciones a avisos push del cliente |
-| `0011_papas_seccion_propia.sql` | Las papas salen de Extras a su propia sección, Fries |
-| `0012_fotos_reales.sql` | Las cuatro tarjetas con foto propia apuntan a la foto real |
-| `0013_foto_completa.sql` | Columna `foto_completa_url`: la foto entera, para verla en grande |
-| `0014_fotos_promos.sql` | Las tres promos con su foto, en recorte ancho |
-| `0015_admins_de_verdad.sql` | Lista de admins: el RLS pregunta *quién* entra, no solo si entró |
-| `0016_cocina_no_es_dueno.sql` | Dos roles: la cocina ve pedidos, el dueño ve todo |
-| `0017_actividad_y_encargado.sql` | Registro de quién cambió qué, y el rol `encargado` |
-| `0018_recetas_y_consumo.sql` | Recetas por producto y descuento del inventario al entregar |
-
-Todas son seguras de correr de nuevo: las que cargan productos usan
-`on conflict (slug) do update`, así que recargarlas actualiza en vez de
-duplicar.
+| `0018_recetas_y_consumo.sql` | Recetas por producto; al entregar un pedido el inventario baja solo |
+| `0019_promos_descuentan.sql` | Las promos declaran qué contienen y descuentan con la receta de la hamburguesa |
+| `0020_unidades_de_verdad.sql` | La unidad deja de ser texto libre: lista cerrada (`und·g·kg·ml·L`) y conversión |
+| `0021_proteina_elegida.sql` | La receta dice "240 g de proteína" y se descuenta la que pidió el cliente |
+| `0022_costos.sql` | Los costos por ingrediente, y de ahí el costo de cada hamburguesa |
+| `0023_costo_de_lo_vendido.sql` | El panel muestra la ganancia real de lo vendido, no la caja del día |
+| `0024_suscripcion.sql` | La cuota mensual del servicio y su corte automático |
 
 ## Desplegar
 
-Import normal de Vercel desde GitHub. Lo único que hay que configurar son las
-variables de entorno de [`.env.example`](.env.example).
-
-## Estado
-
-**Fase 1 en curso.** Lo que ya está:
-
-- [x] Scaffold Next.js + Tailwind v4
-- [x] Sistema de diseño: tokens de color, Anton / Inter / Space Mono, sello, botones
-- [x] Web pública estática: top bar, hero, menú (panel hueso), footer
-- [x] Estado abierto/cerrado real, calculado contra `America/Caracas`
-- [x] Menú real en la base, con precios y promos
-- [x] Carrito + selector de proteína y extras
-- [x] Flujo de pedido: carrito → retiro/delivery → datos → un toque que guarda y abre WhatsApp
-- [x] Guardar el pedido, con N° y total calculados en el servidor
-- [x] Auth con contraseña, `/admin` protegido por el proxy y por RLS
-- [x] Cocina en vivo (Realtime): alerta que insiste, sonido, pantalla despierta
-- [x] Inventario real: agregar, editar, ajustar y borrar contra la base
-- [x] Compras reales: registrar y borrar contra la base
-- [x] Números reales: ventas (= todo pedido no cancelado), compras y ganancia por día
-- [x] El dueño puede anular una venta del día y devolverla si se equivocó
-- [x] Registro de actividad: quién cambió el inventario o un precio, y cuándo
-- [x] Recetas por producto: al entregar un pedido, el inventario se descuenta solo
-- [x] Panel del dueño en vivo: alerta de pedidos sin tomar, pulso del servicio,
-      cobro por WhatsApp a un toque y resumen del día, sin entrar a la cocina
-- [x] Delivery con ubicación GPS: el cliente comparte su ubicación como en
-      WhatsApp y el pedido lleva el enlace de Maps
-- [x] El carrito sobrevive al refresco (localStorage)
-- [x] Deploy en Vercel
-- [x] CRUD del menú desde `/admin`: agotar/prender, editar precio y nombre, agregar y borrar
-- [x] Aviso por Telegram al entrar un pedido (activable con el token del bot)
-- [x] La web recuerda los datos del cliente en su teléfono (sin cuenta)
-- [x] Delivery con ubicación GPS compartida como en WhatsApp
-- [x] Tres PWA instalables por separado: la web del cliente, el admin y la cocina
-- [x] Aviso al cliente por push: "listo para buscar" (retiro) / "va en camino" (delivery)
-- [x] Tarjeta de compartir: al pegar el link en WhatsApp sale la marca, no un cuadro vacío
-- [x] Horario de verdad: fuera de jue–dom 6–11 PM no se puede pedir, la web se
-      abre y se cierra sola a la hora y el servidor rechaza lo que igual llegue
-
-## Las piezas de la marca
-
-El pliego del diseñador es un EPS de Illustrator (`ELEMENTOS CASTA.eps`, fuera
-del repo). Para sacar cualquier pieza en SVG sin abrir Illustrator:
-
-```bash
-node scripts/marca-a-svg.mjs "ruta/ELEMENTOS CASTA.eps" marca-svg/
-```
-
-Escribe una pieza por archivo: el logotipo con manos, el rótulo CASTA, la
-plancha, la C sola y el CASTA con corona. De ahí salieron los dos trazos de la
-C que repite [`CintaMarca`](src/components/CintaMarca.tsx).
-
-## Las fotos de los productos
-
-Cada producto con foto tiene **dos archivos**, porque la foto se ve en dos
-lados y no sirve la misma:
-
-| Archivo | Dónde se ve | Columna |
-|---|---|---|
-| `<slug>.webp` | el recorte de la tarjeta | `foto_url` |
-| `<slug>-completa.webp` | al tocar la tarjeta, entera y sin recortar | `foto_completa_url` |
-
-Van en [`public/productos/`](public/productos) y las rutas son **del sitio**,
-nunca de otro dominio: una URL externa la rechaza `next/image` en runtime y
-tumba la página.
-
-Para preparar una foto nueva, que escribe las dos:
-
-```bash
-node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
-node scripts/fotos.mjs "C:/ruta/combo 3.png" promo-3-cheese ancha
-```
-
-**Elegir la forma importa.** `cuadrada` (por defecto) es para las tarjetas del
-menú, que muestran la foto en un cuadro de 96 px: sirve para un producto solo y
-centrado. `ancha` es 16:9, para el banner de las promos: esas fotos son
-composiciones horizontales —dos hamburguesas lado a lado, tres en fila— y lo
-que comunican **es la cantidad**. Un recorte cuadrado les cortaría las de los
-extremos y la promo mostraría menos de lo que vende.
-
-El encuadre lo elige el script solo. Los originales del fotógrafo quedan en
-~50 KB el recorte y ~50–90 KB la completa, y **no van al repo**. Después hay
-que dejar las dos rutas escritas en la base con un `update`, como en
-[`0014_fotos_promos.sql`](supabase/migrations/0014_fotos_promos.sql).
-
-Si un producto tiene miniatura pero no foto completa, la tarjeta simplemente no
-se ofrece como tocable. Es mejor eso que prometer una foto que no abre.
-
-Las fotos completas se van bajando solas en segundo plano
-([`PrecargarFotos`](src/components/PrecargarFotos.tsx)), pero recién cuando la
-web terminó de cargar y el navegador está ocioso, de a una por vez y **nunca**
-si el visitante pidió ahorrar datos o está en una conexión lenta. Por eso el
-visor las muestra `unoptimized`: así pide el archivo tal cual, que es la misma
-URL que quedó en el caché. Si pasara por el optimizador de Next, la precarga
-estaría calentando una URL que el visor nunca pide.
+Import normal de Vercel desde GitHub. Un push a `main` despliega solo. Lo único
+que hay que configurar son las variables de entorno de
+[`.env.example`](.env.example).
 
 ## Las tres apps instalables
 
-El mismo dominio ofrece **tres** apps distintas, y cuál se instala depende de
-en qué página estés parado cuando tocás "instalar":
+El mismo dominio ofrece **tres** apps distintas, y cuál se instala depende de en
+qué página estés parado al tocar "instalar":
 
 | Desde | App | Arranca en | Ícono |
 |---|---|---|---|
@@ -161,310 +69,175 @@ en qué página estés parado cuando tocás "instalar":
 | `/admin/cocina` | Casta Cocina | `/admin/cocina` | logo hueso sobre grafito |
 
 El dueño y el cocinero terminan con iconos separados en la pantalla de inicio,
-cada uno abriendo donde tiene que abrir. El cocinero no tiene que pasar por el
-menú del cliente ni por el panel para llegar a los pedidos.
+cada uno abriendo donde tiene que abrir. La convención `manifest.ts` de Next
+solo vale en la raíz de `app/`, así que ahí vive el del cliente y los otros dos
+se sirven como route handlers, con el contenido en
+[`src/lib/manifiestos.ts`](src/lib/manifiestos.ts).
 
-**Cómo está armado.** La convención `manifest.ts` de Next solo vale en la raíz
-de `app/`, así que ahí vive el del cliente
-([`src/app/manifest.ts`](src/app/manifest.ts)) y los otros dos se sirven como
-route handlers, con el contenido en
-[`src/lib/manifiestos.ts`](src/lib/manifiestos.ts). Se enganchan
-sobreescribiendo `metadata.manifest`: el layout del panel pone el del admin y
-la página de cocina lo vuelve a pisar con el suyo. La metadata anidada
-reemplaza la del padre campo por campo — es la regla de Next la que hace todo
-esto posible sin duplicar nada.
+## El back-office
 
-Tres decisiones que parecen detalles y no lo son:
+`/admin`, protegido en tres capas: el proxy ([`src/proxy.ts`](src/proxy.ts))
+rebota al login lo que cuelgue de `/admin` sin sesión y sin el rol adecuado; el
+layout del panel lo vuelve a comprobar; y por debajo, el RLS de la base pregunta
+el rol en cada consulta —esa es la frontera que de verdad importa.
 
-- **Los manifests cuelgan de la raíz**, no de `/admin`. El proxy rebota al
-  login todo lo que cuelgue de `/admin` sin sesión, y además manda al rol
-  `cocina` a su pantalla desde cualquier otra ruta. Un manifest que responde un
-  redirect no instala nada. Dónde esté guardado el archivo no tiene que ver con
-  su `scope`.
-- **Las dos apps del back-office comparten `scope: "/admin"`.** Acotar la
-  cocina a `/admin/cocina` sería lo natural, pero dejaría el login afuera: al
-  abrir la app sin sesión el proxy redirige a `/admin/login` y el navegador,
-  viendo una URL fuera de scope, la abriría en una pestaña normal. Lo que separa
-  las dos apps es el `id`, no el scope.
-- **iOS no lee el manifest.** Ni `id`, ni `scope`, ni `start_url`: "Agregar a
-  inicio" usa la URL abierta y el `apple-touch-icon` que declare esa página, y
-  el nombre sale del `apple-mobile-web-app-title`. Por eso `metadataApple()` se
-  repite por app. Se instalan igual como apps separadas, pero cada una arranca
-  con su propia sesión — hay que entrar una vez dentro de cada app instalada.
+**Tres roles** ([`src/lib/admin/secciones.ts`](src/lib/admin/secciones.ts)):
 
-Los iconos se generan con:
+- **Dueño**: todo, incluido anular ventas, ver la actividad y repartir accesos.
+- **Encargado**: el día a día — cocina, menú, inventario, recetas y costos.
+- **Cocina**: solo la pantalla de pedidos.
 
-```bash
-node scripts/iconos.mjs
-```
+**Se entra con correo y contraseña**, no con magic link: entrar a la cocina no
+puede depender de que llegue un mail. Quien olvidó la suya se la cambia otra
+persona del equipo desde **Equipo**.
 
-El trazo no está copiado en el script: lo lee de
-[`LogoMarca.tsx`](src/components/LogoMarca.tsx), así que el día que el
-diseñador mande el SVG bueno y se reemplace allá, los iconos lo siguen solos.
-Los del cliente **no** los toca a propósito: ya están instalados en teléfonos
-de clientes y cambiarle el ícono a una app instalada es cambiarle la cara a
-algo que la gente ya reconoce.
+### Panel del dueño
 
-## La imagen de compartir
+En vivo (Realtime): pedidos sin tomar, pulso del servicio, y la plata del día
+—**Ventas**, **Costo de lo vendido** y **Ganó hoy**—. Desde acá se cobra por
+WhatsApp a un toque y se anula/devuelve una venta, sin entrar a la cocina.
 
-Es [`public/og.jpg`](public/og.jpg), un archivo estático de 1200×630 que se
-genera con las piezas reales de la marca:
+"Costo de lo vendido" es lo que costaron los ingredientes que salieron por la
+puerta, no lo que se gastó ese día: sale de `consumos`, que guarda el detalle
+de cada pedido entregado. Comprar carne para la semana es un gasto de la semana
+y vive en **Costos**, no en el panel.
 
-```bash
-node scripts/og.mjs
-```
+### Cocina en vivo
 
-Solo hay que volver a correrlo si cambia el logo, el mensaje o el horario. El
-script se baja las fuentes la primera vez y el JPG resultante queda commiteado.
+Realtime con alerta que insiste, sonido y pantalla que no se duerme. Cada pedido
+avanza nuevo → preparando → listo → **entregado**. Marcar "Entregado" es lo que
+descuenta el inventario y cuenta la venta.
 
-Ojo con las pruebas: **WhatsApp cachea la vista previa** de cada link por
-bastante tiempo. Si el link ya se compartió antes, para ver la tarjeta nueva hay
-que mandarlo con algo distinto al final (`https://casta-burger.vercel.app/?1`).
+### Inventario
 
-## Anular una venta, y devolverla
+Se ajusta a mano, como el cuaderno, y además baja solo al entregar un pedido de
+un producto con receta. La unidad es un selector (`und·g·kg·ml·L`); cambiarla
+**convierte** la cantidad, el umbral y las recetas que usan el ingrediente, todo
+en una transacción. Entre unidades que no comparten base (kg → und) solo cambia
+la etiqueta, sin inventar números.
 
-`ventas_por_dia` suma **todo pedido cuyo estado no sea `cancelado`**, no solo
-los entregados. Así que un pedido que no fue infla las ventas del día desde que
-entra, sin necesidad de despacharlo — y un pedido de prueba, también.
+### Recetas
 
-En el panel del dueño, cada entregado de hoy tiene **Anular venta**, y los
-anulados salen en su propia lista con **Devolver a ventas**. Los dos botones
-piden un segundo toque para confirmar: es plata, no se toca de un golpe.
+Solo lo que se arma en la cocina: las tres hamburguesas y las papas. Cada receta
+tiene una línea especial, **"la proteína que elija el cliente"**, que se
+descuenta de carne, cordero o pollo según el pedido —de qué item sale cada una
+se configura una vez, arriba de la pantalla. Las promos no se cargan acá:
+descuentan con la receta de la hamburguesa que contienen.
 
-Tres decisiones detrás de esto:
+Cada producto muestra **cuánto cuesta y cuánto se gana** (`cuesta $X · gana $Y`),
+cruzando la receta con los costos. Si algún ingrediente no tiene costo cargado,
+lo avisa.
 
-- **Anula, no borra.** Cancelar saca el pedido de las tres cifras —ventas,
-  pedidos y ganancia— pero la fila queda en la base con su número, su cliente
-  y su comanda. Un negocio no borra pedidos: los anula.
-- **Está en el panel del dueño, no en la cocina.** La cocina sigue sin poder
-  hacerlo: su botón Cancelar existe solo mientras el pedido está en `nuevo`, y
-  se queda así. En plena noche de servicio, pegado a "Listo", un botón que
-  borra ventas es el que se toca por error. La acción del servidor además
-  pregunta `mi_rol()` y rechaza a quien no sea `dueno`, porque el RLS deja que
-  la cocina cambie estados —lo necesita para despachar— y sin esa pregunta el
-  cocinero podría vaciar las ventas del día llamando a la acción directo.
-- **Cada acción exige de dónde viene.** Anular solo toma `entregado`, devolver
-  solo toma `cancelado`, y la condición viaja dentro del mismo `UPDATE`
-  (`.eq("estado", desde)`). Leer el estado y después escribir dejaría una
-  rendija: entre las dos cosas la cocina puede haber movido el pedido, y el
-  panel lo pisaría igual. Un pedido en juego no se anula desde acá ni por
-  error.
+### Costos
 
-## Pendientes conocidos
+Cada gasto elige un ingrediente, cuánto y en qué unidad, y de ahí sale el costo
+por unidad (última compra, no promedio: es el precio de reponer). Los gastos que
+no son ingrediente —gas, bolsas, delivery— entran como "Otro gasto": suman a la
+caja pero no al costo de ningún producto. **No toca el inventario**: el stock se
+ajusta a mano.
 
-- **"3 Cheese Burger" estaba duplicado** como Combo y como Promo, al mismo
-  precio. Quedó solo en Promos, que además muestra el ahorro. El Combo está
-  oculto, no borrado.
-- **Fotos de producto**: ya están las cuatro con foto propia (Cheese Burger,
-  Casta Burger, Casta Smash y Servicio de papas). Las bebidas y los extras van
-  en listas planas, sin foto, así que no les hace falta.
-- **Costo de envío**: no está definido, así que en delivery el mensaje avisa que
-  se acuerda por WhatsApp. Cuando haya tarifa va a `settings` y al total.
+### Actividad
 
-## Quién entra al back-office
-
-**Se entra con correo y contraseña, no con magic link.** El §6 del brief pedía
-enlace por correo y una sola cuenta; las dos cosas se cambiaron a propósito, por
-decisión del dueño y con buen motivo:
-
-> El enlace mete al servicio de correo en el camino crítico. El plan gratis de
-> Supabase manda **2 correos por hora**, así que perder la sesión un viernes a
-> las 8 PM significaba no poder entrar a la cocina hasta dentro de una hora. La
-> pantalla de cocina es el corazón del sistema: no puede depender de que llegue
-> un mail.
-
-Y la pieza que lo cierra: **la recuperación tampoco usa correo**. Si alguien
-olvida su contraseña, el otro admin se la cambia desde Equipo. Son dos personas
-que se ven todos los días. Con eso el cupo de Supabase queda fuera de la
-operación por completo.
-
-La lista vive en la tabla `admins` y se edita desde
-[`/admin/equipo`](https://casta-burger.vercel.app/admin/equipo). Agregar a
-alguien lo suma a la lista **y** le crea la cuenta con la contraseña que le
-pongas, que se la decís de palabra.
-
-### Dos roles
-
-| | `cocina` | `encargado` | `dueno` |
-|---|---|---|---|
-| Ver pedidos y cambiarles el estado | sí | sí | sí |
-| Inventario | no | sí | sí |
-| Compras | no | sí | sí |
-| Cambiar precios del menú | no | sí | sí |
-| Ventas del día y ganancia | no | no | sí |
-| Anular una venta | no | no | sí |
-| Ver el registro de actividad | no | no | sí |
-| Datos de contacto de los clientes | solo del pedido que despacha | sí | sí |
-| Repartir accesos y contraseñas | no | no | sí |
-
-El cocinero necesita leer pedidos y moverlos de estado. Nada más. Darle el
-resto sería darle las ventas del día y el poder de cambiar precios — y, antes
-de esto, también el de sacarle el acceso al dueño desde Equipo.
-
-El rol por defecto al sumar a alguien es `cocina`, el de menos poder:
-equivocarse hacia abajo se arregla con un clic, hacia arriba significa haber
-repartido los números del negocio sin querer.
-
-Dos triggers cuidan que siempre quede al menos un `dueno`: no se puede borrar
-al último ni degradarlo. Sin eso, el negocio quedaría sin nadie que pueda ver
-los números ni repartir accesos.
-
-Son tres cierres, y el que importa es el último:
-
-1. El proxy ([`src/proxy.ts`](src/proxy.ts)) pregunta `mi_rol()` antes de
-   dejar ver `/admin`.
-2. El layout del panel lo vuelve a preguntar.
-3. **El RLS de la base lo pregunta en cada consulta.** Esta es la frontera de
-   verdad: sin estar en `admins` no se lee ni se escribe nada, ni entrando al
-   panel ni pegándole directo a la API de Supabase.
-
-Antes de esto, todas las políticas decían `to authenticated using (true)` y el
-formulario de acceso le creaba cuenta a cualquier correo. Sumadas, las dos
-cosas significaban que cualquiera podía darse de alta y quedarse con lectura y
-escritura completa sobre los pedidos —con nombre, teléfono y dirección de cada
-cliente—, el menú, el inventario y las compras.
-
-**Si alguien queda afuera**, el SQL Editor de Supabase corre con la llave
-secreta y se salta el RLS, así que desde ahí siempre se puede reabrir:
-
-```sql
-insert into admins (email) values ('elcorreo@ejemplo.com') on conflict (email) do nothing;
-```
-
-## Las recetas y el descuento automático
-
-Cada producto puede declarar qué consume por unidad, en
-[`/admin/recetas`](https://casta-burger.vercel.app/admin/recetas). Al marcar un
-pedido como **entregado**, el inventario baja solo; si se anula la venta, se
-devuelve.
-
-Cuatro cosas que no son obvias:
-
-- **La proteína necesita su propia columna.** No es un producto del menú sino
-  un texto que elige el cliente (Carne, Cordero, Pollo), así que una receta
-  por producto descontaría carne aunque hubiera pedido pollo. Una línea con
-  `proteina` en null aplica siempre —el pan, el queso— y con una proteína
-  puesta, solo cuando se eligió esa. **Los extras no necesitan nada**: en la
-  base son productos del menú con su id, así que "tocineta adicional" lleva su
-  receta como cualquier otro.
-- **Un pedido descuenta una sola vez.** La tabla `consumos` tiene `order_id`
-  como clave primaria. Sin eso, cualquier cosa que dispare el cambio de estado
-  dos veces —un reintento, dos pantallas de cocina, un clic doble— descontaría
-  el doble y nadie se enteraría hasta el conteo físico. Es más importante que
-  la resta en sí.
-- **Al revertir se devuelve lo que se sacó, no lo que la receta dice hoy.**
-  `consumos.detalle` guarda el detalle exacto. Si la receta cambió entre la
-  venta y la anulación, recalcular dejaría el stock peor que antes.
-- **El stock puede quedar negativo, y está bien.** La hamburguesa se hizo
-  igual: si el número dijera cero cuando en realidad se deben 3 kg, el
-  inventario mentiría justo cuando más importa. La pantalla lo marca "falta
-  contar". Nunca frena una venta.
-
-El descuento es un trigger y no una acción del servidor por lo mismo que el
-registro de actividad, más una razón extra: así es **atómico** con el cambio de
-estado. O pasan las dos cosas o no pasa ninguna.
-
-Ojo con las promos: en la base son un producto más, así que su receta hay que
-cargarla completa. La de "3 Cheese Burger" lleva tres veces todo.
-
-Y el descuento automático **no** aparece en Actividad: una noche de 50 pedidos
-metería cientos de filas y taparía lo único que esa pantalla existe para
-mostrar. Queda registrado en el pedido y en `consumos`.
-
-## Quién cambió qué
-
-El dueño le da el panel a un empleado, y quiere poder mirar después quién bajó
-el stock de la carne o quién movió un precio. Eso es
-[`/admin/actividad`](https://casta-burger.vercel.app/admin/actividad), visible
-solo para `dueno`.
-
-Cada cambio en `inventory` y en `menu_items` deja una fila con quién, cuándo,
-sobre qué, y el antes → después de cada campo que se movió.
-
-Tres decisiones, y la primera es la que hace que esto sirva de algo:
-
-- **Lo escribe la base, no la app.** Un trigger en cada tabla
-  ([`0017`](supabase/migrations/0017_actividad_y_encargado.sql)), no las
-  acciones del servidor. Un admin tiene un token válido y puede escribir en
-  `inventory` pegándole directo a la API de Supabase sin abrir el panel: un
-  registro escrito por la app se perdería justo el caso que preocupa. Con el
-  trigger, la fila queda entre por donde entre — panel, API o SQL Editor (que
-  se registra como `llave secreta (SQL Editor)`, porque ahí no hay sesión).
-- **El nombre va copiado, no referenciado.** `actor_email` se congela al
-  escribir la fila. El día que saques al empleado de `admins`, el registro
-  tiene que seguir diciendo quién fue; uno que se queda mudo cuando echás a
-  alguien no sirve para nada. El `uuid` de auth se guarda también, porque
-  sobrevive a un cambio de correo.
-- **Solo se agrega.** `actividad` tiene una única política, de select, para
-  `es_dueno()`. Sin política de insert, update ni delete, el RLS las niega a
-  todo el mundo — al encargado, y al dueño también. Las filas entran solo por
-  el trigger, que corre como dueña de la tabla. Si alguien pudiera borrar
-  filas de acá, el registro no probaría nada.
-
-Un update que no movió ningún campo visible no genera fila, y `updated_at` no
-cuenta como campo: si no, el registro se llenaría de líneas que no dicen nada.
-
-### Un registro no es un permiso
-
-Con el registro solo, el empleado sigue pudiendo entrar a Equipo y cambiarle la
-contraseña al dueño — el registro te lo contaría después, cuando ya no podés
-entrar. Por eso además existe el rol **`encargado`**: maneja el día a día
-—pedidos, menú, inventario, compras— y no toca dos cosas.
-
-**Equipo**, porque un empleado que puede quitarle el acceso al patrón no es un
-empleado con permisos: es el patrón. Y **anular ventas**, porque es reescribir
-lo ya registrado, justo lo que el registro viene a evitar.
-
-Qué ve cada rol sale de [`secciones.ts`](src/lib/admin/secciones.ts), una sola
-lista que usan la barra de pestañas y el proxy — si vivieran en dos lados,
-tarde o temprano el menú escondería una sección que la URL igual abre. Y está
-cerrada por omisión: una ruta de `/admin` que no esté anotada ahí solo la abre
-el dueño, así el olvido peca de dejar afuera y no de dejar entrar.
-
-Para sumar al empleado, desde Equipo, o a mano:
-
-```sql
-update admins set rol = 'encargado' where email = 'elcorreo@ejemplo.com';
-```
+Registro de solo-lectura de quién cambió el inventario, el menú y las recetas,
+con el antes → después de cada campo. Lo escribe un trigger de la base, así que
+la fila queda entre por donde entre —panel, API o SQL Editor. Solo lo ve el
+dueño.
 
 ## El horario
 
-Jue–dom, 6:00–11:00 PM, siempre contra `America/Caracas`: ni la zona del
-servidor ni la del visitante lo mueven. Fuera de ese rango los botones
-"Agregar" quedan deshabilitados y la barra inferior dice cuándo abrimos.
+Jue–dom, 6:00–11:00 PM, siempre contra `America/Caracas`. Tres capas: el
+servidor calcula el estado al pintar, el navegador lo recalcula cada 15 s, y
+`crearPedido` lo verifica de nuevo antes de tocar la base —la única que de
+verdad cierra la puerta.
 
-Son tres capas, y las tres hacen falta:
+`MODO_DEMO` en [`src/lib/config.ts`](src/lib/config.ts) apaga las tres a la vez,
+para mostrar el flujo un martes a las 3 PM. Está en `false` en producción.
 
-1. **El servidor** calcula el estado al pintar la página.
-2. **El navegador** lo recalcula cada 15 s, y también al volver a la pestaña.
-   Sin esto, quien dejara la web abierta cruzando las 6:00 o las 11:00 PM
-   seguiría viendo el estado viejo — y podría pedir con la cocina apagada.
-3. **`crearPedido` lo verifica de nuevo** antes de tocar la base. Es la única
-   capa que de verdad cierra la puerta: la interfaz se puede tener cacheada,
-   congelada en una pestaña vieja o directamente saltar.
+## La suscripción del servicio
 
-`MODO_DEMO` en [`src/lib/config.ts`](src/lib/config.ts) es el interruptor que
-apaga las tres a la vez, para poder mostrar el flujo completo un martes a las
-3 PM. Está en `false` desde que el negocio opera de verdad.
+El sistema lo opera TaquionLabs y el negocio paga una cuota mensual de **$20 a
+tasa BCV**, que vence cada **día 15**. Es un SaaS: si pasa la fecha sin pago
+registrado, el corte es **automático**, calculado contra la fecha en la base en
+hora de Caracas —nadie apaga ningún interruptor ni redespliega:
+
+- La **web pública** cae en mantenimiento (el mismo aviso neutro de siempre: el
+  cliente final no se entera del motivo).
+- El **panel** muestra un aviso de cobro con un botón que abre WhatsApp de
+  TaquionLabs para reportar el pago.
+- `crearPedido` rechaza cualquier pedido que llegue igual.
+
+Nada de datos se toca: pedidos, menú, recetas, inventario y costos quedan
+intactos. Solo se tapa el acceso.
+
+**La app del cliente no carga ninguna palanca.** Solo LEE la fecha
+`pagado_hasta` de la tabla `suscripcion`; moverla es cosa de TaquionLabs desde
+afuera, con la llave secreta. Hoy se hace con
+[`scripts/suscripcion.mjs`](scripts/suscripcion.mjs) (`estado` · `activar` ·
+`suspender`); más adelante, desde una consola independiente de TaquionLabs
+—anotada como pendiente— que maneje todos los productos desde un solo lugar,
+sin tocar el código de cada cliente. Que el control viva afuera es a propósito:
+un problema en la app de un cliente no debe alcanzar la palanca de todos.
+
+Piezas: tabla `suscripcion` (migración `0024`),
+[`src/lib/suscripcion.ts`](src/lib/suscripcion.ts) que consulta el corte, el
+aviso del panel y el `Mantenimiento` de la web. Para probar la pantalla de corte
+en local sin tocar la fecha real: `FORZAR_SUSCRIPCION_VENCIDA=1` en `.env.local`
+(no tiene efecto en producción).
+
+## Las fotos de los productos
+
+Cada producto con foto tiene **dos archivos** (el recorte de la tarjeta y la
+foto entera para verla en grande), en [`public/productos/`](public/productos),
+con rutas **del sitio** —una URL externa la rechaza `next/image` en runtime.
+Para preparar una foto, que escribe las dos:
+
+```bash
+node scripts/fotos.mjs "C:/ruta/Casta burger.png" casta-burger
+node scripts/fotos.mjs "C:/ruta/combo 3.png" promo-3-cheese ancha
+```
+
+`cuadrada` (por defecto) es para las tarjetas del menú; `ancha` (16:9) para el
+banner de las promos, cuyas composiciones horizontales comunican la cantidad.
+Después hay que dejar las rutas en la base con un `update`, como en
+[`0014_fotos_promos.sql`](supabase/migrations/0014_fotos_promos.sql).
+
+## Variables de entorno
+
+Todas en [`.env.example`](.env.example). Las tres de Supabase son obligatorias.
+El resto es opcional o por caso:
+
+- `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID`: aviso a la cocina por Telegram.
+- `MANTENIMIENTO=1`: baja la web pública a mano (aparte del corte por cuota).
+- `NEXT_PUBLIC_SITE_URL`: solo con dominio propio, para la imagen de compartir.
+- `NEXT_PUBLIC_WHATSAPP_NUMBER`: número del negocio para los links `wa.me`.
+- `VAPID_*`: claves del push al cliente ("listo para buscar" / "va en camino").
 
 ## Antes de que el negocio dependa de esto
 
-La web ya está publicada. Falta lo de arriba sin marcar, y además:
+**Transferir las cuentas** (§11 del brief): el proyecto de Supabase, Vercel y el
+dominio. `VAPID_SUBJECT` en Vercel va al correo del negocio (hoy tiene el del
+desarrollador; es solo el contacto técnico que exige el estándar de push). Si se
+estrena dominio propio, agregar `NEXT_PUBLIC_SITE_URL`, o la imagen de compartir
+sigue apuntando a `.vercel.app`.
 
-**Transferir las cuentas al correo de la empresa** (§11): repo de GitHub,
-proyecto de Supabase, Vercel y dominio. Incluye cambiar `VAPID_SUBJECT` en las
-variables de Vercel al correo del negocio (hoy tiene el del desarrollador; es
-solo el contacto técnico que exige el estándar de push, no lo ve el cliente).
-Si además se estrena dominio propio, hay que agregar `NEXT_PUBLIC_SITE_URL` con
-la dirección nueva, o la imagen de compartir sigue apuntando a `.vercel.app`.
+El repo, en cambio, **es de TaquionLabs**: es el sistema que se opera como
+servicio, no se transfiere con las cuentas del negocio.
+
+## Pendientes
+
+- **Consola de TaquionLabs (independiente).** Un panel propio —repo, dominio y
+  login aparte de todo— para manejar la suscripción de *todos* los productos
+  (Casta Burger, comanda, y los que vengan) desde un solo lugar. Reemplaza a
+  `scripts/suscripcion.mjs` y no vive dentro de la app de ningún cliente, por
+  seguridad: un problema en un cliente no debe alcanzar la palanca de los demás.
+  Podría incluir además de renovar, un botón de suspender manual.
+- **Bebidas y extras no descuentan inventario.** Las bebidas se revenden (no
+  tienen receta); "Proteína adicional" como extra todavía no sabe de qué
+  proteína es. Pendiente cuando se decida cómo.
+- **Costo de envío** sin definir: en delivery el mensaje avisa que se acuerda
+  por WhatsApp.
 
 ## Decisiones tomadas
 
-**Vercel arranca en plan gratis.** El §1 del brief pedía Pro desde el inicio.
-Se decidió empezar en el plan gratis y pasar a Pro cuando el volumen del
-negocio lo justifique. Punto cerrado, no hace falta volver a plantearlo.
-
-## Entrega
-
-Al cerrar el proyecto, este repo se transfiere a la cuenta de GitHub de la empresa
-junto con Supabase, Vercel y el dominio (§11 del brief).
+**Vercel arranca en plan gratis.** El §1 del brief pedía Pro desde el inicio. Se
+empieza en gratis y se pasa a Pro cuando el volumen lo justifique. Punto cerrado.

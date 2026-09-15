@@ -4,6 +4,7 @@ import { waitUntil } from "@vercel/functions";
 import { estadoNegocio } from "@/lib/horario";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarPedidoTelegram } from "@/lib/telegram";
+import { suscripcionVencida } from "@/lib/suscripcion";
 import type { Proteina } from "@/lib/menu";
 
 /**
@@ -68,6 +69,14 @@ export async function crearPedido(
    * Se mira `puedePedir` y no `abierto` para que MODO_DEMO siga siendo un solo
    * interruptor: en demo, el servidor también deja pasar.
    */
+  // La web caída por cuota vencida no muestra el menú, pero la acción se puede
+  // llamar directo: la misma puerta que el horario, cerrada también acá.
+  if (await suscripcionVencida())
+    return {
+      ok: false,
+      error: "El servicio no está disponible por ahora.",
+    };
+
   const estado = estadoNegocio();
   if (!estado.puedePedir)
     return {

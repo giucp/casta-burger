@@ -6,6 +6,8 @@ import { BotonSalir } from "@/components/admin/BotonSalir";
 import { esRol } from "@/lib/admin/secciones";
 import { APP_ADMIN, metadataApple } from "@/lib/manifiestos";
 import { createClient } from "@/lib/supabase/server";
+import { AvisoSuscripcion } from "@/components/admin/AvisoSuscripcion";
+import { suscripcionVencida } from "@/lib/suscripcion";
 
 /**
  * Todo el panel ofrece instalarse como "Casta Admin", con su propio ícono y
@@ -42,6 +44,19 @@ export default async function AdminLayout({
 
   const { data: rol } = await supabase.rpc("mi_rol");
   if (!user || !esRol(rol)) redirect("/admin/login?error=sin-permiso");
+
+  // Cuota vencida: el panel entero se reemplaza por el aviso de cobro. Va
+  // después de la comprobación de sesión —el aviso es para el equipo, no para
+  // cualquiera— y tapa todas las pantallas por igual, cocina incluida. No se
+  // borra ni se bloquea nada en la base: al registrar el pago, todo vuelve.
+  if (await suscripcionVencida()) {
+    return (
+      <div className="flex min-h-full flex-1 flex-col items-center justify-center bg-ink px-5 py-10">
+        <LogoMarca className="mb-2 size-12" />
+        <AvisoSuscripcion />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-ink">

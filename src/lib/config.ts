@@ -38,6 +38,23 @@ export const BUSINESS = {
 export const MANTENIMIENTO = process.env.MANTENIMIENTO === "1";
 
 /**
+ * La cuota mensual del servicio, que mantiene TaquionLabs.
+ *
+ * Vence cada día 15. Si pasa la fecha sin pago registrado, la web del cliente
+ * cae en mantenimiento y el panel muestra el aviso de cobro — todo automático,
+ * calculado contra la fecha en la base (migración 0024), sin que nadie tenga
+ * que apagar nada a mano. Estos valores son solo los textos que se muestran;
+ * el interruptor real es `pagado_hasta` en la tabla `suscripcion`.
+ */
+export const SUSCRIPCION = {
+  proveedor: "TaquionLabs",
+  montoUsd: 20,
+  diaDeCobro: 15,
+  /** Número de TaquionLabs en formato wa.me (sin +, sin espacios). */
+  whatsapp: "584244069768",
+} as const;
+
+/**
  * Modo demo: la web se ve y se usa completa aunque el local esté cerrado.
  *
  * En `false` (producción) manda el §5 del brief: fuera de horario los botones

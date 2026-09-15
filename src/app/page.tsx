@@ -13,6 +13,7 @@ import { MANTENIMIENTO } from "@/lib/config";
 import { estadoNegocio } from "@/lib/horario";
 import { obtenerMenu } from "@/lib/menu-db";
 import { porCategoria } from "@/lib/menu";
+import { suscripcionVencida } from "@/lib/suscripcion";
 
 /**
  * El menú lo edita el dueño desde /admin, así que la página se revalida cada
@@ -27,8 +28,10 @@ export const revalidate = 60;
 
 export default async function Home() {
   // Antes de cualquier otra cosa: con la web en mantenimiento no se lee la
-  // base ni se arma nada del sitio, solo se muestra el aviso.
-  if (MANTENIMIENTO) return <Mantenimiento />;
+  // base ni se arma nada del sitio, solo se muestra el aviso. Lo mismo si
+  // venció la cuota del servicio — para el cliente final es indistinguible de
+  // un mantenimiento común, que es lo que corresponde: no es asunto suyo.
+  if (MANTENIMIENTO || (await suscripcionVencida())) return <Mantenimiento />;
 
   const estado = estadoNegocio();
   const menu = await obtenerMenu();
