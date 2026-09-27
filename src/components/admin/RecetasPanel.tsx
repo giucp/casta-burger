@@ -13,7 +13,13 @@ import {
   type ProteinaIngrediente,
   type RecetaProducto,
 } from "@/lib/acciones/recetas";
-import { UNIDADES, compatibles, convertir, type Unidad } from "@/lib/unidades";
+import {
+  UNIDADES,
+  compatibles,
+  convertir,
+  sonCompatibles,
+  type Unidad,
+} from "@/lib/unidades";
 
 /**
  * Cuánto lleva cada producto.
@@ -90,6 +96,13 @@ export function RecetasPanel({
       <MapaProteinas
         mapa={mapa}
         inventario={inventario}
+        unidadesPedidas={[
+          ...new Set(
+            recetas.flatMap((r) =>
+              r.lineas.filter((l) => l.esProteina && l.unidad).map((l) => l.unidad!),
+            ),
+          ),
+        ]}
         onCambio={setMapa}
         onError={setError}
       />
@@ -134,11 +147,14 @@ export function RecetasPanel({
 function MapaProteinas({
   mapa,
   inventario,
+  unidadesPedidas,
   onCambio,
   onError,
 }: {
   mapa: ProteinaIngrediente[];
   inventario: ItemInventario[];
+  /** Las unidades en que las recetas piden la proteína (en la práctica, "g"). */
+  unidadesPedidas: Unidad[];
   onCambio: (m: ProteinaIngrediente[]) => void;
   onError: (m: string | null) => void;
 }) {
@@ -157,6 +173,19 @@ function MapaProteinas({
   };
 
   const faltan = PROTEINAS.filter((p) => !elegido(p));
+
+  /**
+   * Las proteínas cuyo item está en una unidad que las recetas no pueden
+   * restar: la receta pide "240 g" y el item está en und. No hay conversión
+   * posible, así que esa proteína no se descuenta — y hasta acá no lo decía
+   * nadie. Pasó con la carne, el pollo y el cordero durante tres noches.
+   */
+  const incompatibles = PROTEINAS.flatMap((p) => {
+    const item = inventario.find((i) => i.id === elegido(p));
+    if (!item) return [];
+    const malas = unidadesPedidas.filter((u) => !sonCompatibles(u, item.unidad));
+    return malas.length ? [{ item, pide: malas[0] }] : [];
+  });
 
   return (
     <div className="mb-5 rounded-card border border-white/8 bg-card p-4">
@@ -198,6 +227,13 @@ function MapaProteinas({
           {faltan[0].toLowerCase()}, no se descuenta nada.
         </p>
       )}
+
+      {incompatibles.map(({ item, pide }) => (
+        <p key={item.id} className="mt-2 font-mono text-[11px] font-bold text-casta">
+          ⚠ {item.nombre} está en {item.unidad} y las recetas piden {pide}: no se
+          está descontando. Cambiá su unidad a {pide} en Inventario.
+        </p>
+      ))}
     </div>
   );
 }

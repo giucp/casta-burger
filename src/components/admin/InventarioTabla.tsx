@@ -87,6 +87,23 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
     if (nueva === item.unidad) return;
 
     const convierte = sonCompatibles(item.unidad, nueva);
+
+    // Entre unidades que no convierten, el número queda igual y solo cambia la
+    // etiqueta. Pasó de verdad: la carne se cambió de g a und en un conteo, sus
+    // 7600 g pasaron a leerse "7600 und", y como las recetas piden gramos, la
+    // carne dejó de descontarse sin que nada avisara. Se pregunta antes.
+    if (
+      !convierte &&
+      !confirm(
+        `Pasar ${item.nombre} de ${item.unidad} a ${nueva} NO convierte los números: ` +
+          `${item.cantidad} ${item.unidad} va a quedar como ${item.cantidad} ${nueva}.\n\n` +
+          `Y las recetas que lo usan en ${item.unidad} van a dejar de descontarlo.\n\n` +
+          `¿Seguro que querés cambiarlo?`,
+      )
+    ) {
+      return;
+    }
+
     const previo = items;
 
     parchar(item.id, {
