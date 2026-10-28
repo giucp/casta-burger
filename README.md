@@ -169,6 +169,11 @@ hora de Caracas —nadie apaga ningún interruptor ni redespliega:
 Nada de datos se toca: pedidos, menú, recetas, inventario y costos quedan
 intactos. Solo se tapa el acceso.
 
+**Antes del corte, un recordatorio.** Desde 2 días antes del vencimiento (y el
+mismo día), el **dueño** ve al entrar al panel una ventana que avisa la fecha,
+con **Aceptar**, la **X** y un botón para reportar el pago. Sale una vez por
+sesión; el encargado no la ve.
+
 **La app del cliente no carga ninguna palanca.** Solo LEE la fecha
 `pagado_hasta` de la tabla `suscripcion`; moverla es cosa de TaquionLabs desde
 afuera, con la llave secreta. Hoy se hace con
@@ -181,8 +186,9 @@ un problema en la app de un cliente no debe alcanzar la palanca de todos.
 Piezas: tabla `suscripcion` (migración `0024`),
 [`src/lib/suscripcion.ts`](src/lib/suscripcion.ts) que consulta el corte, el
 aviso del panel y el `Mantenimiento` de la web. Para probar la pantalla de corte
-en local sin tocar la fecha real: `FORZAR_SUSCRIPCION_VENCIDA=1` en `.env.local`
-(no tiene efecto en producción).
+en local sin tocar la fecha real: `FORZAR_SUSCRIPCION_VENCIDA=1` en `.env.local`,
+y para el recordatorio `FORZAR_RECORDATORIO_CUOTA=1` (ninguna tiene efecto en
+producción).
 
 ## Las fotos de los productos
 

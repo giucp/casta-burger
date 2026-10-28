@@ -1,4 +1,4 @@
-import { createClient } from "./supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import type { Categoria, MenuItem } from "./menu";
 
 /** Fila cruda de `menu_items`, en snake_case como viene de Postgres. */
@@ -48,11 +48,21 @@ function aMenuItem(f: FilaMenu): MenuItem {
 /**
  * El menú visible en la web pública.
  *
- * Se lee con la llave pública, así que lo que llega es exactamente lo que el
- * RLS deja ver: solo los productos disponibles.
+ * Se lee con la llave pública y SIN la sesión de nadie: lo que llega es
+ * exactamente lo que ve un visitante anónimo, aunque quien entre sea el dueño.
+ *
+ * Y es a propósito que no pase por el cliente con cookies. Leer cookies vuelve
+ * dinámica la página: cada visita era una consulta a Supabase y el
+ * `revalidate = 60` de la home no servía de nada. Sin cookies, Next la arma
+ * una vez por minuto para todos, y el dueño igual ve sus cambios al instante
+ * porque las acciones del menú llaman a `revalidatePath("/")`.
  */
 export async function obtenerMenu(): Promise<MenuItem[]> {
-  const supabase = await createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  );
   const { data, error } = await supabase
     .from("menu_items")
     .select(

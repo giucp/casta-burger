@@ -46,7 +46,7 @@ function normalizar(correo: string): string {
 async function exigirDueno(): Promise<string | null> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("es_dueno");
-  return data === true ? null : "No tenés permiso para esto.";
+  return data === true ? null : "No tienes permiso para esto.";
 }
 
 /**
@@ -244,7 +244,7 @@ export async function quitarAdmin(correo: string): Promise<Resultado> {
   } = await supabase.auth.getUser();
 
   if (normalizar(user?.email ?? "") === email)
-    return { ok: false, error: "No podés sacarte a vos mismo." };
+    return { ok: false, error: "No puedes sacarte a ti mismo." };
 
   const { error } = await supabase.from("admins").delete().eq("email", email);
 

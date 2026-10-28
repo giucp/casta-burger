@@ -27,6 +27,18 @@ import {
 
 const estaBajo = (i: ItemInventario) => i.cantidad <= i.umbralAlerta;
 
+/**
+ * Un número que casi seguro está en otra unidad. Pasó dos veces con la
+ * tocineta: está en kg, se contaron 5,9 kg y se escribió 5900. El sistema no
+ * puede saberlo, pero sí notar el salto y preguntar.
+ *
+ * - 100 kg o 100 L de un solo ingrediente no entran en esta cocina.
+ * - Multiplicar por 100 o más lo que había tampoco es un conteo normal.
+ */
+const pareceError = (antes: number, despues: number, unidad: string) =>
+  ((unidad === "kg" || unidad === "L") && despues >= 100 && despues > antes) ||
+  (antes > 0 && despues / antes >= 100);
+
 const numero = (v: string) => {
   const n = Number(v.replace(",", "."));
   return Number.isFinite(n) && n >= 0 ? n : null;
@@ -44,9 +56,29 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
       actuales.map((i) => (i.id === id ? { ...i, ...patch } : i)),
     );
 
-  const guardarCantidadDebounced = (id: string, cantidad: number) => {
+  // Lo último que quedó guardado de cada item, para comparar contra eso y no
+  // contra lo que se va pintando mientras se teclea.
+  const guardado = useRef<Record<string, number>>(
+    Object.fromEntries(inicial.map((i) => [i.id, i.cantidad])),
+  );
+
+  const guardarCantidadDebounced = (item: ItemInventario, cantidad: number) => {
+    const { id } = item;
     clearTimeout(timers.current[id]);
     timers.current[id] = setTimeout(async () => {
+      const antes = guardado.current[id] ?? 0;
+      if (pareceError(antes, cantidad, item.unidad) && !confirm(
+        `¿Seguro que hay ${cantidad} ${item.unidad} de ${item.nombre}?\n\n` +
+          `Antes había ${antes} ${item.unidad}.` +
+          (item.unidad === "kg" || item.unidad === "L"
+            ? ` Si contaste en ${item.unidad === "kg" ? "gramos" : "mililitros"}, ` +
+              `escribe ${cantidad / 1000}.`
+            : ""),
+      )) {
+        parchar(id, { cantidad: antes });
+        return;
+      }
+      guardado.current[id] = cantidad;
       const r = await actualizarItemInventario(id, { cantidad });
       if (!r.ok) setError(r.error);
     }, 700);
@@ -55,14 +87,14 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
   const ajustar = (item: ItemInventario, delta: number) => {
     const cantidad = Math.max(0, Number((item.cantidad + delta).toFixed(2)));
     parchar(item.id, { cantidad });
-    guardarCantidadDebounced(item.id, cantidad);
+    guardarCantidadDebounced(item, cantidad);
   };
 
   const fijarCantidad = (item: ItemInventario, valor: string) => {
     const n = numero(valor);
     if (n === null) return;
     parchar(item.id, { cantidad: n });
-    guardarCantidadDebounced(item.id, n);
+    guardarCantidadDebounced(item, n);
   };
 
   /** Guarda un campo de texto/umbral al terminar de editar (on blur). */
@@ -98,7 +130,7 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
         `Pasar ${item.nombre} de ${item.unidad} a ${nueva} NO convierte los números: ` +
           `${item.cantidad} ${item.unidad} va a quedar como ${item.cantidad} ${nueva}.\n\n` +
           `Y las recetas que lo usan en ${item.unidad} van a dejar de descontarlo.\n\n` +
-          `¿Seguro que querés cambiarlo?`,
+          `¿Seguro que quieres cambiarlo?`,
       )
     ) {
       return;
@@ -118,8 +150,18 @@ export function InventarioTabla({ inicial }: { inicial: ItemInventario[] }) {
         : {}),
     });
 
+    // Lo guardado también cambia de escala: 3,75 kg pasan a ser 3750 g, y no
+    // es un salto sospechoso la próxima vez que se toque la cantidad.
+    const guardadoPrevio = guardado.current[item.id];
+    if (convierte) {
+      guardado.current[item.id] =
+        convertir(guardadoPrevio ?? item.cantidad, item.unidad, nueva) ??
+        item.cantidad;
+    }
+
     const r = await cambiarUnidadItem(item.id, nueva);
     if (!r.ok) {
+      guardado.current[item.id] = guardadoPrevio;
       setItems(previo);
       setError(r.error);
     }

@@ -55,3 +55,58 @@ export async function suscripcionVencida(): Promise<boolean> {
     return false;
   }
 }
+
+/** Cuántos días antes del corte empieza a avisar el panel. */
+const DIAS_DE_AVISO = 2;
+
+const leerPagadoHasta = unstable_cache(
+  async (): Promise<string | null> => {
+    const { data, error } = await createAdminClient()
+      .from("suscripcion")
+      .select("pagado_hasta")
+      .eq("id", true)
+      .single();
+    if (error) {
+      console.error("No se pudo leer la fecha de la cuota:", error.message);
+      return null;
+    }
+    return data.pagado_hasta as string;
+  },
+  ["suscripcion-pagado-hasta"],
+  { revalidate: 60 },
+);
+
+/**
+ * Si la cuota vence en los próximos días, cuándo y en cuántos.
+ *
+ * `pagadoHasta` es el último día cubierto: la cuota "vence" ese día y el corte
+ * llega a la medianoche siguiente. Se avisa ese día y los dos anteriores; fuera
+ * de esa ventana —o si algo falla— devuelve `null` y no se muestra nada.
+ */
+export async function cuotaPorVencer(): Promise<{
+  pagadoHasta: string;
+  dias: number;
+} | null> {
+  const hoy = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Caracas",
+  }).format(new Date());
+
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.FORZAR_RECORDATORIO_CUOTA === "1"
+  ) {
+    return { pagadoHasta: hoy, dias: 0 };
+  }
+
+  try {
+    const pagadoHasta = await leerPagadoHasta();
+    if (!pagadoHasta) return null;
+    const dias = Math.round(
+      (Date.parse(pagadoHasta) - Date.parse(hoy)) / 86_400_000,
+    );
+    return dias >= 0 && dias <= DIAS_DE_AVISO ? { pagadoHasta, dias } : null;
+  } catch (e) {
+    console.error("No se pudo leer la fecha de la cuota:", e);
+    return null;
+  }
+}

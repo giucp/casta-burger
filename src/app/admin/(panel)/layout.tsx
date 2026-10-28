@@ -7,7 +7,8 @@ import { esRol } from "@/lib/admin/secciones";
 import { APP_ADMIN, metadataApple } from "@/lib/manifiestos";
 import { createClient } from "@/lib/supabase/server";
 import { AvisoSuscripcion } from "@/components/admin/AvisoSuscripcion";
-import { suscripcionVencida } from "@/lib/suscripcion";
+import { RecordatorioCuota } from "@/components/admin/RecordatorioCuota";
+import { cuotaPorVencer, suscripcionVencida } from "@/lib/suscripcion";
 
 /**
  * Todo el panel ofrece instalarse como "Casta Admin", con su propio ícono y
@@ -58,8 +59,13 @@ export default async function AdminLayout({
     );
   }
 
+  // A pocos días del corte, el dueño ve un recordatorio al entrar. El
+  // encargado no: el pago no pasa por él.
+  const porVencer = rol === "dueno" ? await cuotaPorVencer() : null;
+
   return (
     <div className="flex min-h-full flex-1 flex-col bg-ink">
+      {porVencer && <RecordatorioCuota {...porVencer} />}
       <header className="border-b border-white/8 bg-char">
         <div className="mx-auto flex max-w-[1180px] items-center gap-3 px-5 py-3">
           <LogoMarca className="size-8 shrink-0" />

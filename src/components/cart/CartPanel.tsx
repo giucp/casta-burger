@@ -301,7 +301,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
             <div className="mt-4 border-t border-bone-line pt-4">
               {avisos === "no" ? (
                 <p className="font-mono text-[11px] text-bone-mute">
-                  Sin avisos por ahora. Igual podés seguir tu pedido por
+                  Sin avisos por ahora. Igual puedes seguir tu pedido por
                   WhatsApp.
                 </p>
               ) : (
@@ -462,7 +462,7 @@ export function CartPanel({ onClose }: { onClose: () => void }) {
 
       <div className="mb-5">
         <h3 className="mb-2 font-mono text-[11px] uppercase tracking-[0.16em] text-bone-mute">
-          ¿Cómo la querés?
+          ¿Cómo la quieres?
         </h3>
         <div className="flex gap-2">
           {(["retiro", "delivery"] as const).map((t) => (
